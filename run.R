@@ -25,27 +25,43 @@ mileSplits <- function(splits=c(),target='',distance=13.1){
 
 }
 
+# Make a class called Duration, a subclass of numeric, whose value is elapsed
+# time in seconds. Hence, fractional values measure sub-second values.
+
+print.Duration <- function(x, ...){
+   print(secondsToString(x),...)
+}
+
 toSeconds <- function(x){
-   if (!is.character(x)) stop("x must be a character string of the form H:M:S")
+   if (!is.character(x) && !is(x,'Duration'))
+      stop("x must be a character string of the form H:M:S")
    if (length(x)<=0)return(x)
 
-   unlist(
-      lapply(x,
-         function(i){
-            i <- as.numeric(strsplit(i,':',fixed=TRUE)[[1]])
-            if (length(i) == 3)
-               i[1]*3600 + i[2]*60 + i[3]
-            else if (length(i) == 2)
-               i[1]*60 + i[2]
-            else if (length(i) == 1)
-               i[1]
-         }
+   structure(
+      unlist(
+         lapply(x,
+            function(i){
+               i <- as.numeric(strsplit(i,':',fixed=TRUE)[[1]])
+               if (length(i) == 3)
+                  i[1]*3600 + i[2]*60 + i[3]
+               else if (length(i) == 2)
+                  i[1]*60 + i[2]
+               else if (length(i) == 1)
+                  i[1]
+            }
+         )
       )
+      , class=c("Duration","numeric")
    )
 }
 str2sec <- toSeconds
 
 secondsToString <- function(x,digits=2){
+
+   if (!is.numeric(x) && !is(x,'Duration'))
+      stop("x must be a numeric or of class Duration")
+   if (length(x)<=0)return(x)
+
    unlist(
       lapply(x,
          function(i){
