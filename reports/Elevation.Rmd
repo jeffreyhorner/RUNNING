@@ -1,8 +1,9 @@
-```{r echo=FALSE}
+```{r warning=FALSE,echo=FALSE}
 source('../plots.R')
 source('../RunningAHEAD.R')
 raLog <- readXMLTrainingLog('../data/RunningAHEAD_hornerj_log_20131023.xml')
-course <- courseElevation(raLog,c("StumpJump50k"),meters=FALSE)
+#course <- getCourses(raLog,c("StumpJump50k", "UpChuck50k"),meters=FALSE)
+course <- getCourses(raLog,c("StumpJump50k"),meters=FALSE)
 
 opts_chunk$set(fig.width=15,fig.height=6,message=FALSE,echo=FALSE,warning=FALSE)
 
@@ -24,11 +25,20 @@ opts_chunk$set(fig.width=15,fig.height=6,message=FALSE,echo=FALSE,warning=FALSE)
 #
 #theme_set(myTheme)
 ```
-
 ```{r}
 createElevationPlot(course)
 ```
+
 ```{r}
-course <- courseElevation(raLog,c("UpChuck50k"),meters=FALSE)
-createElevationPlot(course)
+x <- courseSegment(course,endAt=10*5280,meters=FALSE)
+createElevationPlot(x)
+```
+
+```{r}
+x <- courseSegment(course,startAt=10*5280,endAt=20*5280,meters=FALSE)
+createElevationPlot(x)
+```
+```{r}
+x <- courseSegment(course,startAt=20*5280,endAt=30*5280,meters=FALSE)
+createElevationPlot(x)
 ```
