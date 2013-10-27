@@ -124,7 +124,7 @@ elevationGainLoss <- function(elObj){
   )
 }
 
-calcAscentsDescents <- function(course,grade=.15,flatness=.03,maxGap=150,minRun=800,meters=TRUE,debug=FALSE){
+calcAscentsDescents <- function(course,grade=.10,flatness=.03,maxGap=150,minRun=800,meters=TRUE,debug=FALSE){
   if (!is(course,'raCourseList')) stop("Need object of raCourseList")
 
   offsetUnit <- attr(course$elevation,'offsetUnit')
@@ -211,11 +211,63 @@ calcAscentsDescents <- function(course,grade=.15,flatness=.03,maxGap=150,minRun=
     # Magic be here
     elObj$adStart <- 0L
     elObj$adEnd <- 0L
+    elObj$adSegment <- 0L
     elObj$isZero <- isZero(elObj$score)
     z <- which(isZero(elObj$score))
     y <- diff(z)
+    adStarts <- z[y>runLen] + 1
+    adEnds <- adStarts + y[y>runLen] - 2
     elObj$adStart[z[y>runLen]] <- 1
     elObj$adEnd[z[y>runLen] + y[y>runLen]] <- 1
+    for (i in 1:length(adStarts))
+      elObj$adSegment[seq(adStarts[i],adEnds[i])] <- 1
+
+    # Create rectangles for ggplot'ing
+    rects <- 
+      data.frame(
+        xmin=elObj$offset[which(elObj$adSegment==1)],
+        grade=elObj$grade[which(elObj$adSegment==1)],
+        score=elObj$score[which(elObj$adSegment==1)]
+      )
+    rects$xmax=rects$xmin + offsetUnit$length
+    rects$ymin <- -Inf
+    rects$ymax <- Inf
+    rects$Course <- elObj$Course[1]
+
+    attr(elObj,'rectangles') <- rects
+
+    # Create polygons
+    numADSegments <- length(which(elObj$adSegment==1)) - length(adStarts)
+    polyN <- 
+      data.frame(
+        x=rep(0,4 * numADSegments),
+        y=rep(0,4 * numADSegments),
+        id=rep(0L, 4 * numADSegments),
+        grade=rep(0, 4 * numADSegments),
+        score=rep(0, 4 * numADSegments)
+      )
+      
+#    ymin <- min(elObj$alt) - offsetUnit$length
+    k <- 1L
+    for (i in 1:length(adStarts)){
+      for (j in seq(adStarts[i],adEnds[i]-1)){
+        xx <- elObj[c(j,j+1),'offset']
+        yy <- elObj[c(j,j+1),'alt']
+        ggrade <- elObj[j,'grade']
+        sscore <- elObj[j,'score']
+        pp <- seq(k,length.out=4)
+        polyN[pp,'x'] <- c(xx[1],xx[1],xx[2],xx[2])
+        polyN[pp,'y'] <- c(-Inf,yy[1],yy[2],-Inf)
+        polyN[pp,'id'] <- k
+        polyN[pp,'score'] <- sscore
+        polyN[pp,'grade'] <- ggrade
+
+        k <- k + 4
+      }
+    }
+    polyN$Course <- elObj$Course[1]
+
+    attr(elObj,'polygons') <- polyN
 
 
     elObj
@@ -248,13 +300,19 @@ calcAscentsDescents <- function(course,grade=.15,flatness=.03,maxGap=150,minRun=
   }
 
   x <- lapply( course$courseNames,scoreCourse)
+  y <- attr(x[[1]],'rectangles')
+  w <- attr(x[[1]],'polygons')
   z <- x[[1]]
   if (length(x) > 1){
     for (i in 2:length(x)){
+      y <- rbind(y,attr(x[[i]],'rectangles'))
+      w <- rbind(w,attr(x[[i]],'polygons'))
       z <- rbind(z,x[[i]])
     }
   }
 
+  attr(z,'rectangles') <- y
+  attr(z,'polygons') <- w
   attr(z,'offsetUnit') <- attr(course$elevation,'offsetUnit')
   attr(z,'flatness') <- flatness
   attr(z,'grade') <- grade
@@ -267,6 +325,9 @@ calcAscentsDescents <- function(course,grade=.15,flatness=.03,maxGap=150,minRun=
 }
 
 courseSegment <- function(course, startAt=-Inf, endAt=Inf, meters=TRUE){
+  if (isTRUE(all.equal(-Inf,startAt)) && isTRUE(all.equal(Inf,endAt)))
+    return(course)
+
   offsetUnit <- attr(course$elevation,'offsetUnit')
 
   if (unitInMeters(offsetUnit) && !meters){

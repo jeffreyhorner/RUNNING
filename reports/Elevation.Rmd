@@ -2,8 +2,8 @@
 source('../plots.R')
 source('../RunningAHEAD.R')
 raLog <- readXMLTrainingLog('../data/RunningAHEAD_hornerj_log_20131023.xml')
-#course <- getCourses(raLog,c("StumpJump50k", "UpChuck50k"),meters=FALSE)
-course <- getCourses(raLog,c("StumpJump50k"),meters=FALSE)
+course <- getCourses(raLog,c("StumpJump50k", "UpChuck50k"),meters=FALSE)
+#course <- getCourses(raLog,c("StumpJump50k"),meters=FALSE)
 
 opts_chunk$set(fig.width=15,fig.height=6,message=FALSE,echo=FALSE,warning=FALSE)
 
@@ -30,15 +30,21 @@ createElevationPlot(course)
 ```
 
 ```{r}
-x <- courseSegment(course,endAt=10*5280,meters=FALSE)
-createElevationPlot(x)
+createElevationPlot(course,0,5*1600)
 ```
 
 ```{r}
-x <- courseSegment(course,startAt=10*5280,endAt=20*5280,meters=FALSE)
-createElevationPlot(x)
+createElevationPlot(course,5*1600,10*1600)
 ```
 ```{r}
-x <- courseSegment(course,startAt=20*5280,endAt=30*5280,meters=FALSE)
-createElevationPlot(x)
+createElevationPlot(course,10*1600,15*1600)
+```
+```{r}
+createElevationPlot(course,15*1600,20*1600)
+```
+```{r}
+createElevationPlot(course,20*1600,25*1600)
+```
+```{r}
+createElevationPlot(course,25*1600,30*1600)
 ```

@@ -252,29 +252,26 @@ createMeanAgeOverYearsPlot <- function(results){
 }
 
 
-createElevationPlot <- function(course,startAt=-Inf,endAt=-Inf,meters=TRUE){
-  course <- calcAscentsDescents(course,grade=.08,flatness=.01,maxGap=50, minRun=400)
+createElevationPlot <- function(course,startAt=-Inf,endAt=Inf,meters=TRUE){
+  course <- courseSegment(course,startAt,endAt,meters)
+  course <- calcAscentsDescents(course,grade=.08,flatness=.03,maxGap=150, minRun=400)
 
   if (length(course$courseNames)>1)
     facetObj <- facet_grid(Course ~ .)
   else
     facetObj <- NULL
 
-  elev <- course$elevation
-  foo <- elev$offset[which(elev$adStart==1)]
-  bar <- elev$offset[which(elev$adEnd==1)]
-  numRecs <- length(foo)
-  d <- data.frame(xmin=foo,
-                  xmax=bar,
-                  ymin = rep(-Inf,numRecs),
-                  ymax = rep(Inf,numRecs),
-                  Course = elev$Course[which(elev$adStart==1)])
   mile_scale <- function(x) x/5280
+
+#  scale_fill_gradient2(low='blue',high='red') +
+#  geom_polygon(data=attr(course$elevation,'polygons'),aes(x=x,y=y,fill=grade,group=id),inherit.aes=FALSE,alpha=.7)
+#  geom_rect(data=attr(course$elevation,'rectangles'),aes(xmin=xmin,ymin=ymin,xmax=xmax,ymax=ymax,fill=grade),inherit.aes=FALSE,alpha=.5) + 
   ggplot(data=course$elevation,aes(x=offset,y=alt,group=Course)) + 
-  scale_x_continuous(breaks=seq(0,30*5280,by=5280),label=mile_scale) +
   facetObj +
+  scale_x_continuous(breaks=seq(0,30*5280,by=5280),label=mile_scale) +
   geom_line() +
-  geom_rect(data=d,aes(xmin=xmin,ymin=ymin,xmax=xmax,ymax=ymax,group=Course),inherit.aes=FALSE,alpha=.2)
+  scale_fill_gradient2(low='blue',high='red') +
+  geom_polygon(data=attr(course$elevation,'polygons'),aes(x=x,y=y,fill=score,group=id),inherit.aes=FALSE,alpha=.7)
 }
 
 createGradeDistPlot <- function(course){
