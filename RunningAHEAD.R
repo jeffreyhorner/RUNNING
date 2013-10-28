@@ -217,8 +217,8 @@ calcAscentsDescents <- function(course,grade=.10,flatness=.03,maxGap=150,minRun=
     y <- diff(z)
     adStarts <- z[y>runLen] + 1
     adEnds <- adStarts + y[y>runLen] - 2
-    elObj$adStart[z[y>runLen]] <- 1
-    elObj$adEnd[z[y>runLen] + y[y>runLen]] <- 1
+    elObj$adStart[adStarts] <- 1
+    elObj$adEnd[adEnds] <- 1
     for (i in 1:length(adStarts))
       elObj$adSegment[seq(adStarts[i],adEnds[i])] <- 1
 
