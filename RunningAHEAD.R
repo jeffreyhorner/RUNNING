@@ -176,7 +176,7 @@ calcAscentsDescents <- function(course,grade=.10,flatness=.03,maxGap=150,minRun=
 
     # Grades that are at or above/below the grade range get 
     # scores of 1 or -1. This will create runs of non-zero score segments
-    elObj$score <- 0.0
+    elObj$score <- elObj$score2 <- 0.0
     elObj$score[which(elObj$grade>=aGrade)] <- 1
     elObj$score[which(elObj$grade<=dGrade)] <- -1
 
@@ -215,60 +215,77 @@ calcAscentsDescents <- function(course,grade=.10,flatness=.03,maxGap=150,minRun=
     elObj$isZero <- isZero(elObj$score)
     z <- which(isZero(elObj$score))
     y <- diff(z)
-    adStarts <- z[y>runLen] + 1
+    adStarts <- z[which(y>runLen)] + 1
+    if (length(adStarts)>0 && adStarts[length(adStarts)] > nrow(elObj))
+      adStarts[length(adStarts)] <- nrow(elObj)
     adEnds <- adStarts + y[y>runLen] - 2
-    elObj$adStart[adStarts] <- 1
-    elObj$adEnd[adEnds] <- 1
-    for (i in 1:length(adStarts))
-      elObj$adSegment[seq(adStarts[i],adEnds[i])] <- 1
 
-    # Create rectangles for ggplot'ing
-    rects <- 
-      data.frame(
-        xmin=elObj$offset[which(elObj$adSegment==1)],
-        grade=elObj$grade[which(elObj$adSegment==1)],
-        score=elObj$score[which(elObj$adSegment==1)]
-      )
-    rects$xmax=rects$xmin + offsetUnit$length
-    rects$ymin <- -Inf
-    rects$ymax <- Inf
-    rects$Course <- elObj$Course[1]
+    if (length(adStarts)>0){
+      elObj$adStart[adStarts] <- 1
+      elObj$adEnd[adEnds] <- 1
+      for (i in 1:length(adStarts))
+        elObj$adSegment[seq(adStarts[i],adEnds[i])] <- 1
 
-    attr(elObj,'rectangles') <- rects
-
-    # Create polygons
-    numADSegments <- length(which(elObj$adSegment==1)) - length(adStarts)
-    polyN <- 
-      data.frame(
-        x=rep(0,4 * numADSegments),
-        y=rep(0,4 * numADSegments),
-        id=rep(0L, 4 * numADSegments),
-        grade=rep(0, 4 * numADSegments),
-        score=rep(0, 4 * numADSegments)
-      )
-      
-#    ymin <- min(elObj$alt) - offsetUnit$length
-    k <- 1L
-    for (i in 1:length(adStarts)){
-      for (j in seq(adStarts[i],adEnds[i]-1)){
-        xx <- elObj[c(j,j+1),'offset']
-        yy <- elObj[c(j,j+1),'alt']
-        ggrade <- elObj[j,'grade']
-        sscore <- elObj[j,'score']
-        pp <- seq(k,length.out=4)
-        polyN[pp,'x'] <- c(xx[1],xx[1],xx[2],xx[2])
-        polyN[pp,'y'] <- c(-Inf,yy[1],yy[2],-Inf)
-        polyN[pp,'id'] <- k
-        polyN[pp,'score'] <- sscore
-        polyN[pp,'grade'] <- ggrade
-
-        k <- k + 4
+      # Score 2
+      # Goal is to reduce each segment to generally ascdending/descending or undulating
+      # We take score from above and score as asc/desc, find runs of length one and see
+      # if we can flip them.
+      elObj$score2 <- 0L
+      for (i in 1:length(adStarts)){
+        score2 <- ifelse(elObj$score[seq(adStarts[i],adEnds[i])] > 0.0, 1L, -1L)
+        score <- rle(score2)
+        scoreLen <- length(score$values)
+        # Runs of length one are weak
+        # See if we can flip this value if previous and next runs are opposite
+        for (j in which(score$lengths==1)){
+          if (j-1 > 1 && j+1 <= scoreLen){
+            x <- list(val=score$values[j-1],len=score$lengths[j-1])
+            y <- list(val=score$values[j],len=score$lengths[j])
+            z <- list(val=score$values[j+1],len=score$lengths[j+1])
+            if (y$val != x$val && y$val!= z$val && y$len < x$len && y$len < z$len)
+              score2[sum(score$lengths[seq(1,j)])] <- x$val
+          }
+        }
+        elObj$score2[seq(adStarts[i],adEnds[i])] <- score2
       }
+
+      # Create polygons
+      numADSegments <- length(which(elObj$adSegment==1)) - length(adStarts)
+      polyN <- 
+        data.frame(
+          x=rep(0,4 * numADSegments),
+          y=rep(0,4 * numADSegments),
+          id=rep(0L, 4 * numADSegments),
+          grade=rep(0, 4 * numADSegments),
+          score=rep(0, 4 * numADSegments),
+          score2=rep(0, 4 * numADSegments)
+        )
+        
+      k <- 1L
+      for (i in 1:length(adStarts)){
+        for (j in seq(adStarts[i],adEnds[i])){
+          xx <- elObj[c(j,j+1),'offset']
+          yy <- elObj[c(j,j+1),'alt']
+          ggrade <- elObj[j,'grade']
+          sscore <- elObj[j,'score']
+          sscore2 <- elObj[j,'score2']
+          pp <- seq(k,length.out=4)
+          polyN[pp,'x'] <- c(xx[1],xx[1],xx[2],xx[2])
+          polyN[pp,'y'] <- c(-Inf,yy[1],yy[2],-Inf)
+          polyN[pp,'id'] <- k
+          polyN[pp,'score'] <- sscore
+          polyN[pp,'score2'] <- sscore2
+          polyN[pp,'grade'] <- ggrade
+
+          k <- k + 4
+        }
+      }
+      polyN$Course <- elObj$Course[1]
+    } else {
+      polyN <- NULL
     }
-    polyN$Course <- elObj$Course[1]
 
     attr(elObj,'polygons') <- polyN
-
 
     elObj
   }
@@ -277,7 +294,7 @@ calcAscentsDescents <- function(course,grade=.10,flatness=.03,maxGap=150,minRun=
 
     smoothCourse <- function(kourse){
       elObj <- subset(course$elevation,Course==kourse)
-      lObj <- loess(alt ~ offset, elObj, span=.01)
+      lObj <- loess(alt ~ offset, elObj, span=.1)
       elObj$alt <- predict(lObj)
       elObj$Course <- paste(kourse,'smooth')
 
@@ -311,7 +328,6 @@ calcAscentsDescents <- function(course,grade=.10,flatness=.03,maxGap=150,minRun=
     }
   }
 
-  attr(z,'rectangles') <- y
   attr(z,'polygons') <- w
   attr(z,'offsetUnit') <- attr(course$elevation,'offsetUnit')
   attr(z,'flatness') <- flatness

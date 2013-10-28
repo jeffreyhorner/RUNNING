@@ -3,9 +3,9 @@ source('../plots.R')
 source('../RunningAHEAD.R')
 raLog <- readXMLTrainingLog('../data/RunningAHEAD_hornerj_log_20131023.xml')
 course <- getCourses(raLog,c("StumpJump50k", "UpChuck50k"),meters=FALSE)
-#course <- getCourses(raLog,c("StumpJump50k"),meters=FALSE)
+#course <- getCourses(raLog,c("StumpJump50k"))
 
-opts_chunk$set(fig.width=15,fig.height=6,message=FALSE,echo=FALSE,warning=FALSE)
+opts_chunk$set(fig.width=7,fig.height=3,message=FALSE,echo=FALSE,warning=FALSE)
 
 # Optimal for larger plots
 #
@@ -28,7 +28,6 @@ opts_chunk$set(fig.width=15,fig.height=6,message=FALSE,echo=FALSE,warning=FALSE)
 ```{r}
 createElevationPlot(course)
 ```
-
 ```{r}
 createElevationPlot(course,0,5*1600)
 ```
