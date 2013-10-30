@@ -281,11 +281,40 @@ calcAscentsDescents <- function(course,grade=.10,flatness=.03,maxGap=150,minRun=
         }
       }
       polyN$Course <- elObj$Course[1]
+
+      # Create alternative polygon
+      poly2 <- subset(polyN,y<Inf&y>-Inf)
+      poly2 <- subset(poly2,!duplicated(x))
+      x <- rle(poly2$score2)
+      poly2$id <- rep(seq(1,length(x$lengths)),x$lengths)
+      polyN2 <- NULL
+      for (i in unique(poly2$id)){
+        p <- subset(poly2,id==i)
+        if (p$score2[1] == 1){
+          polyN2 <-
+            rbind(
+              polyN2,
+              p,
+              data.frame(x=p$x[nrow(p)],y=min(p$y),id=i,grade=0,score=0,score2=p$score2[1],Course=p$Course[1])
+            )
+        } else {
+          polyN2 <-
+            rbind(
+              polyN2,
+              data.frame(x=p$x[nrow(p)],y=min(p$y),id=i,grade=0,score=0,score2=p$score2[1],Course=p$Course[1]),
+              p
+            )
+        }
+      }
+      poly2 <- polyN2
+
     } else {
       polyN <- NULL
+      poly2 <- NULL
     }
 
     attr(elObj,'polygons') <- polyN
+    attr(elObj,'polygons2') <- poly2
 
     elObj
   }
@@ -319,16 +348,19 @@ calcAscentsDescents <- function(course,grade=.10,flatness=.03,maxGap=150,minRun=
   x <- lapply( course$courseNames,scoreCourse)
   y <- attr(x[[1]],'rectangles')
   w <- attr(x[[1]],'polygons')
+  v <- attr(x[[1]],'polygons2')
   z <- x[[1]]
   if (length(x) > 1){
     for (i in 2:length(x)){
       y <- rbind(y,attr(x[[i]],'rectangles'))
       w <- rbind(w,attr(x[[i]],'polygons'))
+      v <- rbind(w,attr(x[[i]],'polygons2'))
       z <- rbind(z,x[[i]])
     }
   }
 
   attr(z,'polygons') <- w
+  attr(z,'polygons2') <- v
   attr(z,'offsetUnit') <- attr(course$elevation,'offsetUnit')
   attr(z,'flatness') <- flatness
   attr(z,'grade') <- grade
