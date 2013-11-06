@@ -1,0 +1,133 @@
+```{r message=FALSE, echo=FALSE}
+library(xtable)
+options(xtable.type='html')
+options(xtable.include.rownames=FALSE)
+options(xtable.html.table.attributes='border="1" cellspacing="0"')
+source('../plots.R')
+source('../RunningAHEAD.R')
+load('../data/UpChuck50k_results_2008-2013.Rda')
+opts_chunk$set(fig.width=6,fig.height=6,message=FALSE,echo=FALSE,warning=FALSE)
+theme_set(theme_grey())
+```
+![UpChuck 50k Logo](http://www.rockcreek.com/img/upchuck.gif)
+
+I hate throwing up. I first did it when I was sick with the stomach flu
+as a kid, and large food chunks got lodged in my nose and the stomach
+acid turned my teeth to chalk sticks. It was so gross and disgusting I
+vowed I would never, ever do it again. Tequila fooled me into doing it
+again in college, so I learned not to say never.  
+<a href="http://en.wikipedia.org/wiki/Emetophobia">Emetophobia</a> is
+the irrational fear or anxiety of vomiting... I'm not afraid of it; I
+loath it. So I think I don't have emetophobia. Maybe there's a bunch of
+ultra runners who have it, maybe not, but puking seems to be a rite of
+passage for some. And for others it's even glorified. 
+
+I'm not sure that's
+what <a href="http://wildtrails.org/upchuck-50k-trail-running-race/">Chad
+Wamak</a> (watch the video. don't worry it's
+clean) had in mind when he and Matt Sims ran the 
+<a href="http://www.cumberlandtrail.org/docs/ctc_trail_map_Dec-2010.pdf">Three</a>
+<a href="http://www.cumberlandtrail.org/ct_overview.html">Gorges</a>
+section of the Cumberland Trail, but that's what Rock/Creek has done in
+naming it's <a href="http://www.rockcreek.com/upchuck.rco">UpChuck 50k
+Trail Race</a>, being contested this Saturday November 9, 2013.
+
+Here's the description from their website:
+
+> Wild Trails and Rock/Creek present the official UPCHUCK 50K! The
+> event consists of a point-to-point trail that runs entirely on the
+> technically-challenging single track of the Cumberland Trail.
+> 
+> This course has huge climbs and huge descents into Soddy Creek, Possum
+> Creek and Rock Creek. It will, without a doubt, go down in the race log
+> as one of the best 50k courses you will ever do. Please do not attempt
+> this run as your first 50K. This is a serious endeavor and will quite
+> possibly be your slowest 50k to date.
+> 
+> Let us reiterate: this is seriously difficult. It is REQUIRED that
+> runners have completed a 50k within the last 12 months in a time of
+> 7:30:00 or less.
+>
+>Proceeds benefit [Wild Trails](http://wildtrails.org/), a 501(c)(3) organization dedicated to the
+>use, expansion and promotion of trails in greater Chattanooga.
+
+Man I wish I could run this. Unfortunately my 8:30 StumpJump time this year leaves me outside the qualifying window.
+
+What follows is a brief report with plots and commentary similar to my
+[StumpJump50k report](http://jeffreyhorner.blogspot.com/2013/10/rockcreek-stumpjump-50k-2013-report.html). 
+
+## Number Of Finishers
+
+The Upchuck 50k has been contested each year since 2008, with 2009 having the most finishers. Only 5 women finished in 2008 and 2012. Since the numbers are so low for women, I've also provided raw data in table format as they are hard to read from the plot.
+
+```{r, results='asis'}
+library(xtable)
+finishersFreq <- createFinishersFreqDataFrame(results)
+finishersFreqLong <- reshape(finishersFreq,direction='wide',timevar='year',idvar=c('groups'))
+names(finishersFreqLong) <- sub('freq.','',names(finishersFreqLong))
+print(xtable(finishersFreqLong))
+```
+
+```{r, fig.height=4}
+createFinishersFreqPlot(finishersFreq) +
+  ggtitle("Number of Finishers (2008-2013)")
+```
+## Finishing Times
+
+```{r}
+createFinishersFreqByTimePlot(subset(results,year==2012)) +
+  ggtitle("Finishing Times for 2012")
+```
+In 2012, more men finished between 6:00 and 6:30 hours than any other half-hour time frame. Compare that to 
+[2012 StumpJump results](http://jeffreyhorner.blogspot.com/2013/10/rockcreek-stumpjump-50k-2013-report.html)
+ where more men finished between 6:30 and 7:00 hours.
+
+```{r}
+createFinishersFreqByTimePlot(results) +
+  ggtitle("Finishing Times for All Years (2008-2012)")
+```
+
+The above holds true for all years as well, and that's for both races! It has been said that if you've run the StumpJump and you're going to run the UpChuck, then add 30-40 minutes to your StumpJump time for a good estimated finishing time, but I do wonder if that is true. Maybe you should SUBTRACT 30-40 minutes! 
+
+
+```{r}
+createFinishTimeOverYearsPlot(results) +
+  ggtitle("Finishing Times Over the Years")
+```
+
+And look at the mens' median values (thick black horizontal bar in the boxes) trending downward! Will we see that trend continue in 2013?
+
+```{r}
+createFinishTimeOverYearsPlot(subset(results,gender_place>=1&gender_place<=10),boxplot=FALSE,jitter.width=.1,jitter.alpha=.4,point.size=4) +
+  ggtitle("Top 10 Finishing Times (Men and Women)")
+```
+## Age
+
+```{r}
+createAgeOverYearsPlot(results) +
+  ggtitle("Age of Finishers")
+```
+
+No age data was collected for 2010 finishers.
+
+## Age Groups
+
+```{r}
+createAgeGroupDistPlot(createAgeGroupDistDataFrame(results)) +
+  ggtitle("Finishers By Age Group (2008-2012, no 2010)")
+```
+
+```{r}
+createFinishTimeOverAgeGroupsPlot(results) +
+  ggtitle("Age Group Finishing Times (2008-2012, no 2010)")
+```
+
+```{r}
+createFinishTimeOverAgeGroupsPlot(subset(results,year==2012&!is.na(age)),point.size=3,jitter.width=.2) +
+  ggtitle("Age Group Finishing Times for 2012") 
+```
+
+```{r}
+createFinishTimeOverAgeGroupsPlot(subset(results,year==2011&!is.na(age)),point.size=3,jitter.width=.2) +
+  ggtitle("Age Group Finishing Times for 2011") 
+```

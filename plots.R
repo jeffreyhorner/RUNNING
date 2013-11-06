@@ -137,9 +137,9 @@ createAgeGroupDistDataFrame <- function(results){
 createAgeGroupDistPlot <- function(ageDist){
   ggplot(
     data=ageDist,
-    aes(x=factor(age_group),y=freq,group=group,fill=group)
+    aes(x=age_group,y=freq,group=group,fill=group)
   ) +
-  geom_bar(stat="identity",colour="black") +
+  geom_bar(stat="identity",colour="black",width=1) +
   facet_grid(group ~ .) + 
   xlab("Age (years)") + ylab("Number of Finishers") +
   guides(fill=FALSE) +
@@ -252,28 +252,52 @@ createMeanAgeOverYearsPlot <- function(results){
 }
 
 
-createElevationPlot <- function(course,startAt=-Inf,endAt=Inf,meters=TRUE){
+createElevationPlot <- function(course,startAt=-Inf,endAt=Inf,meters=TRUE,polyGrp=2){
   course <- courseSegment(course,startAt,endAt,meters)
-  course <- calcAscentsDescents(course,grade=.10,flatness=.03,maxGap=150, minRun=100)
 
   if (length(course$courseNames)>1)
     facetObj <- facet_grid(Course ~ .)
   else
     facetObj <- NULL
 
-  mile_scale <- function(x) x/5280
+  offsetUnit <- attr(course$elevation,'offsetUnit')
+  if (meters){
+    xlabObj <- xlab("Distance (kilometers)")
+    if (unitInMeters(offsetUnit)){
+      xlabFun <- function(x) x/1000
+      xscaleObj <- scale_x_continuous(breaks=seq(0,50*1000,by=1000),label=xlabFun)
+    } else {
+      xlabFun <- function(x) round((x * offsetUnit$toMeters)/1000)
+      xscaleObj <- scale_x_continuous(breaks=seq(0,50*1000*offsetUnit$toFeet,by=1000*offsetUnit$toFeet),label=xlabFun)
+    }
+  } else {
+    xlabObj <- xlab("Distance (miles)")
+    if (unitInMeters(offsetUnit)){
+      xlabFun <- function(x) (x / offsetUnit$toFeet)/5280
+      xscaleObj <- scale_x_continuous(breaks=seq(0,(30*5280) * offsetUnit$toMeters,by=5280*offsetUnit$toMeters),label=xlabFun)
+    } else {
+      xlabFun <- function(x) x/5280
+      xscaleObj <- scale_x_continuous(breaks=seq(0,30*5280,by=5280),label=xlabFun)
+    }
+  }
 
-#  scale_fill_gradient2(low='blue',high='red') +
-#  geom_polygon(data=attr(course$elevation,'polygons'),aes(x=x,y=y,fill=grade,group=id),inherit.aes=FALSE,alpha=.7)
-#  geom_rect(data=attr(course$elevation,'rectangles'),aes(xmin=xmin,ymin=ymin,xmax=xmax,ymax=ymax,fill=grade),inherit.aes=FALSE,alpha=.5) + 
-  ggplot(data=course$elevation,aes(x=offset,y=alt,group=Course)) + 
-  ylab("Altitude (feet)") + xlab("Distance (miles)") +
+  # Elevation object
+  elObj <- course$elevation
+
+  # polygon data
+  grade <- paste(attr(elObj,'grade')*100,'%',sep='')
+  polys <- subset(attr(elObj,'polygons'),group==2)
+  polys$steepSegment <- paste(ifelse(polys$score2>=1,'>=','<='),grade)
+
+  ggplot(data=elObj,aes(x=offset,y=alt,group=Course)) + 
+  ylab("Altitude (feet)") + xlabObj + xscaleObj +
   facetObj +
-  scale_x_continuous(breaks=seq(0,30*5280,by=5280),label=mile_scale) +
   geom_line() +
-  scale_fill_gradient2(low='blue',high='red') +
-  theme(legend.position="none") +
-  geom_polygon(data=attr(course$elevation,'polygons'),aes(x=x,y=y,fill=score2,group=id),inherit.aes=FALSE,alpha=.7)
+  scale_fill_manual(values=c('blue','red')) +
+  scale_colour_manual(values=c('blue','red')) +
+  guides(colour=FALSE,fill=guide_legend(title="Grade")) +
+  theme(legend.position = "top") +
+  geom_polygon(data=polys,aes(x=x,y=y,color=steepSegment,fill=steepSegment,group=id),inherit.aes=FALSE,alpha=.8)
 }
 
 createGradeDistPlot <- function(course){

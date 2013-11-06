@@ -3,8 +3,9 @@ source('../plots.R')
 source('../RunningAHEAD.R')
 raLog <- readXMLTrainingLog('../data/RunningAHEAD_hornerj_log_20131023.xml')
 course <- getCourses(raLog,c("StumpJump50k", "UpChuck50k"),meters=FALSE)
+course <- calcAscentsDescents(course,grade=.10,flatness=.03,maxGap=150, minRun=100)
 opts_chunk$set(fig.width=7,fig.height=3,message=FALSE,echo=FALSE,warning=FALSE)
-
+theme_set(theme_gray())
 ```
 
 ![UpChuck 50k Logo](http://www.rockcreek.com/img/upchuck.gif)
@@ -29,24 +30,24 @@ Also check back next week as I'll provide a summary of UpChuck's historical fini
 DISCLAIMER: Elevation data are notoriously inaccurate so don't read too much into these results. Feel free to download the 
 [code and data](https://github.com/jeffreyhorner/RUNNING) and explore yourself.
 ```{r}
-createElevationPlot(course)
+createElevationPlot(course,meters=FALSE)
 ```
 ```{r}
-createElevationPlot(course,0,5*1600)
+createElevationPlot(course,0,5*5280,meters=FALSE)
 ```
 
 ```{r}
-createElevationPlot(course,5*1600,10*1600)
+createElevationPlot(course,5*5280,10*5280,meters=FALSE)
 ```
 ```{r}
-createElevationPlot(course,10*1600,15*1600)
+createElevationPlot(course,10*5280,15*5280,meters=FALSE)
 ```
 ```{r}
-createElevationPlot(course,15*1600,20*1600)
+createElevationPlot(course,15*5280,20*5280,meters=FALSE)
 ```
 ```{r}
-createElevationPlot(course,20*1600,25*1600)
+createElevationPlot(course,20*5280,25*5280,meters=FALSE)
 ```
 ```{r}
-createElevationPlot(course,25*1600,30*1600)
+createElevationPlot(course,25*5280,30*5280,meters=FALSE)
 ```

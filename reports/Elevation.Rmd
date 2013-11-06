@@ -2,28 +2,26 @@
 source('../plots.R')
 source('../RunningAHEAD.R')
 raLog <- readXMLTrainingLog('../data/RunningAHEAD_hornerj_log_20131023.xml')
-#course <- getCourses(raLog,c("StumpJump50k", "UpChuck50k"),meters=FALSE)
+#course <- getCourses(raLog,c("StumpJump50k", "UpChuck50k"))
 course <- getCourses(raLog,c("StumpJump50k"))
-
-opts_chunk$set(fig.width=7,fig.height=3,message=FALSE,echo=FALSE,warning=FALSE)
+course <- calcAscentsDescents(course,grade=.10,flatness=.03,maxGap=150, minRun=100)
 
 # Optimal for larger plots
 #
-#opts_chunk$set(fig.width=12,dev='CairoPNG',message=FALSE,echo=FALSE,warning=FALSE)
-#myTheme <- theme_grey()
-#myTheme$plot.title$size <- 18
-#myTheme$plot.title$face <- "bold"
-#myTheme$text$size <- 16
-#myTheme$text$face <- "bold"
-#myTheme$axis.title.x$size <- 14
-#myTheme$axis.title.x$vjust <- -.2
-#myTheme$axis.title.y$size <- 14
-#myTheme$axis.title.y$vjust <- .2
-#myTheme$legend.text$size <- 14
-#myTheme$legend.text$face <- "bold"
-#myTheme$plot.margin <- unit(rep(1,4),'lines')
-#
-#theme_set(myTheme)
+opts_chunk$set(fig.width=14,fig.height=7,message=FALSE,echo=FALSE,warning=FALSE)
+myTheme <- theme_grey()
+myTheme$plot.title$size <- 18
+myTheme$plot.title$face <- "bold"
+myTheme$text$size <- 16
+myTheme$text$face <- "bold"
+myTheme$axis.title.x$size <- 14
+myTheme$axis.title.x$vjust <- -.2
+myTheme$axis.title.y$size <- 14
+myTheme$axis.title.y$vjust <- .2
+myTheme$legend.text$size <- 14
+myTheme$legend.text$face <- "bold"
+myTheme$plot.margin <- unit(rep(1,4),'lines')
+theme_set(myTheme)
 ```
 ```{r}
 createElevationPlot(course)

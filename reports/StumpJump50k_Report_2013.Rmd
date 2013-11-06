@@ -1,0 +1,130 @@
+```{r message=FALSE, echo=FALSE}
+source('../plots.R')
+source('../RunningAHEAD.R')
+load('../data/StumpJump50k_results_2002-2013.Rda')
+opts_chunk$set(fig.width=6,fig.height=6,message=FALSE,echo=FALSE,warning=FALSE)
+theme_set(theme_grey())
+```
+
+## Suffer Fest... Death March... Horrible Humidity...
+
+These are just a few phrases to describe 
+[Rock/Creek's Stumpjump 50k](http://www.rockcreek.com/stumpjump.rco)
+trail race
+[this year](http://blog.rockcreek.com/archives/results-photos-from-the-2013-rockcreek-stumpjump-50k.html).
+I could mention others, but I'll leave them echoing off the 
+[halucenogenically challenged rock formations](http://www.flickr.com/photos/cogset/8426266431/),
+[caves](http://www.flickr.com/photos/rockcreek/10105502035/), and bluffs along the trail. 
+
+If that sounds bad, this year an over abundance of yellow jacket nests tucked just inches off the trail waited for you to accidentally stumble over then practice your 5k racing pace while they aggressively pursued to sting you to sting you to death. I was stung by one and pursued by a second for a hundred meters who just loved alighting on top of my head while I frantically beat it with both hands... maybe that's why I was so dizzy! Ah hindsight. But I also witnessed another runner drop out of the race because she was stung at least five times and was having trouble breathing. There are also reports of people getting stung up to twenty times.
+
+Oh, and let's not forget the beautiful and plentiful green folliage, allergenic yellow in the case of ragweed or goldenrod, draping each side of the trail inviting you to brush up against it and infuse you with itchy oils and pollens for a week. Or the thorny vines that enjoy growing across the trail to whip around your ankles leaving a permanent bloody stripe for at least two weeks (I welcomed this one as I received much sympathy from my sweet wife).
+
+It may be obvious by now, but I love this race!
+
+What follows is a graphical summary of finishing times and speculative prognostications. Data were generously provided by the good folks at [Ultra Signup](http://ultrasignup.com). I won't claim that they are 100% accurate, but it's what I could get my hands on. Also, I'm a hack statistician, so please be aware that my observations may be off base. If you see anything glaringly wrong, or just want to offer some advice, feel free to leave a comment and I'll attend to it. I've stored the code on 
+[github](https://github.com/jeffreyhorner/StumpJump), but get in contact with me if you want the data. Also, if the race organizers would like to add details about anything I missed, I'll happily update this post.
+
+## Number Of Finishers
+
+The Stumpjump 50k has been contested each year going back to 2002, starting out as a grass roots event and growing into a nationaly recognized premier 50k trail race. Although no historical registration data exist (inquiries were made to both the race director and Ultra Signup), finishing times are the best proxy for estimating the race's growth and popularity.
+
+```{r, fig.height=4}
+createFinishersFreqPlot(createFinishersFreqDataFrame(results)) +
+  ggtitle("Number of Finishers (2002-2013)")
+```
+
+It appears participation steadily increased from 2002 to 2009 with a noticeable increase in the number of finishers in 2010. Women roughly account for 20% of the finishers over all years. 2010 (possibly, I don't know for sure) saw the first 
+[cap on the number of registrants at 500](http://blog.rockcreek.com/archives/rockcreek_stumpjump_50k_registration_cap_announced.html) which I believe has been in force ever since, with a possible increase to 600 in years after. Also, I was told that this year tied for having the hottest max temperature of 87 degrees. That plus
+[100 DNFs](http://blog.rockcreek.com/archives/results-photos-from-the-2013-rockcreek-stumpjump-50k.html) probably account for the first ever dip in the number of finishers.
+
+In 2009 Dean Karnazes 
+[spoke at the carbo dinner](http://blog.rockcreek.com/archives/2009_stumpjump_speaker_dean_karnazes.html)
+the night before the race and participated the next day completing it in just over 6 hours. No slouch of a time! But given this paltry evidence, I'm going out on a limb here and claiming that his participation was a strong influence in the rise of the number of finishers the next year. I admit that I got bit by the ultra bug after reading his book "Ultramarathon Man: Confessions of an All-Night Runner", so I may be biased (but I'm in good company:
+[Ian Coreless](http://http://iancorless.org) hosts the wildly popular podcast
+["Talk Ultra"](http://iancorless.org/podcast/) and
+[admits](http://traffic.libsyn.com/talkultra/Episode_18_-_Meltzer_Noakes_Karnazes.mp3) this, too).
+
+Regardless, there's plenty of anecdotal evidence over at
+[iRunFar](http://www.irunfar.com/) pointing to a rise in popularity of ultra distance running.
+
+There was a strict cut-off time this year at 9 hours, and I came a little too close with my own time of 8:21. The following graphics show finishing time in hours on the X axis and number of finishers on the Y axis, with the height of each bar representing the number of finishers within a 30 minute time period. Also note that I've separated the times of men and women into separate parts of the graphic. Be careful comparing the "Finishing Tmies for 2013" graphic with the "Finishing Times for All years (2002-2013)" graphic as they do not share the same X axis. 
+
+```{r}
+createFinishersFreqByTimePlot(subset(results,year==2013)) +
+  ggtitle("Finishing Times for 2013")
+```
+
+Looks like some years there was no cut-off or it was extended to 11 or 12 hours. Also the largest group of men finished between 6:30 and 7 hours, while the largest group of women finished between 7:30 and 8 hours.
+
+```{r}
+createFinishersFreqByTimePlot(results) +
+  ggtitle("Finishing Times for All Years (2002-2013)")
+```
+
+## Finishing Times
+
+Before looking at the raw data note that the course has changed in both distance and start/finish locations over the years, but I'm sure the race organizers have tried to honor the 50k distance as best they could (as an aside, go read 
+[this course description](http://www.harpethhillsmarathon.com/) of a popular Nashville marathon for a good laugh). If I have my facts right, the course has stayed the same for the last 4 years and will probably remain so in the future.
+
+The following two graphics display the raw finishing times with a
+[boxplot](http://en.wikipedia.org/wiki/Box_and_whisker_plot) overlayed, the X axis displaying year, and the Y axis displaying finishing time in hours. The raw data points are the colored dots (blue for men and red for women) and are jittered within each year so you can get a sense of the spread of the data. They're also slightly transparent so that when they overlap they get more colorful, which should give you an indication of closeness of data points). Also, the middle black thicker line in each boxplot defines the median, e.g. the value smack dab in the middle of the lowest and highest value, while the top and bottom (called hinges in the description of wikipedia) of the box correspond to the 25th and 75th percentiles (go read the wikipedia article if you want more info about 'em).
+ 
+```{r}
+createFinishTimeOverYearsPlot(results) +
+  ggtitle("Finishing Times Over the Years")
+```
+
+The course record was set by 
+[David Riddle in 2011](http://blog.rockcreek.com/archives/sj50k-an-interview-with-rockcreek-stumpjump-50k-winner-david-riddle.html) with a blazing time of 3:49:52, the first year I ran the StumpJump. Next year 
+[Max King](http://blog.montrail.com/athletes/maxking/) tried his luck, but the Dude went off course 100 meters into the race and DNF'ed!
+
+So I should explain: Stumpjump consists of two races, the 50k and the 11 mile trail race. For both 2011 and 2012 (the year King started the race), the races started at the same time and in the same location, e.g. the 50kers and 11 milers were all mixed up at the start line. When the gun went off the runners ran 100 meters and then they either turned left onto the main road if they were running the 11 mile race, or they turned right if they were running the 50k race. Now these instructions were made very clear before the gun went off. I was there both years! I heard them! And once you got to the fork in the road, there were volunteers shouting at you to turn the correct way. Anyway, King must have had trouble with his ears. Fortunately, for those who are directionally challenged or just plain hard of hearing, the race directors fixed this situation in 2013 by having two different start times.
+
+Here's the top 10 finishing times over the years for you to gawk at. See Riddle's data point in 2011 (it's the lowest blue dot)? I do wonder if the second and third place finishers benefited from having him in the race. Were they chasing him? 
+
+It'd be nice to make that list in the future. Yeah Right!
+
+```{r}
+createFinishTimeOverYearsPlot(subset(results,gender_place>=1&gender_place<=10),boxplot=FALSE,jitter.width=.1,jitter.alpha=.4,point.size=4) +
+  ggtitle("Top 10 Finishing Times (Men and Women)")
+```
+## Age
+
+Unfortunately ages were not collected between 2002 and 2004, So the plots below reflect that. Whoa! Did a 15 year old girl finish the race in 2011?
+
+```{r}
+createAgeOverYearsPlot(subset(results,year>2004&!is.na(age))) +
+  ggtitle("Age of Finishers")
+```
+
+## Age Groups
+
+Yes, there are some near septuagenarians that finish the race. In fact, in 2011 I asked one guy who had finished just behind me how old he was, mid 60s, and he had finished the race 8 years in a row!
+
+```{r}
+createAgeGroupDistPlot(createAgeGroupDistDataFrame(subset(results,year>2004&!is.na(age)))) +
+  ggtitle("Finishers By Age Group (2005-2013)")
+```
+
+The graphics below, one for 2005 thru 2013 and one each for 2011 thru 2013, should give you some target times to hit depending on your age group and gender. Be careful when comparing the individual years since the X axis changes depending on whether or not a runner less that 20 years of age finished the race.
+
+```{r}
+createFinishTimeOverAgeGroupsPlot(subset(results,year>2004&!is.na(age))) +
+  ggtitle("Age Group Finishing Times (2005-2013)")
+```
+
+```{r}
+createFinishTimeOverAgeGroupsPlot(subset(results,year==2013&!is.na(age)),point.size=3,jitter.width=.2) +
+  ggtitle("Age Group Finishing Times for 2013") 
+```
+
+```{r}
+createFinishTimeOverAgeGroupsPlot(subset(results,year==2012&!is.na(age)),point.size=3,jitter.width=.2) +
+  ggtitle("Age Group Finishing Times for 2012") 
+```
+
+```{r}
+createFinishTimeOverAgeGroupsPlot(subset(results,year==2011&!is.na(age)),point.size=3,jitter.width=.2) +
+  ggtitle("Age Group Finishing Times for 2011") 
+```

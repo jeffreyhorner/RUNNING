@@ -124,7 +124,15 @@ elevationGainLoss <- function(elObj){
   )
 }
 
-calcAscentsDescents <- function(course,grade=.10,flatness=.03,maxGap=150,minRun=800,meters=TRUE,debug=FALSE){
+# Create polygons
+polyDF <- function(x,y,id,score,score2,group,course){
+    data.frame(
+      x=as.numeric(x),y=as.numeric(y),id=as.integer(id),score=as.numeric(score),
+      score2=as.numeric(score2), group=as.integer(group),Course=course
+    )
+}
+
+calcAscentsDescents <- function(course,grade=.10,flatness=.03,maxGap=150,minRun=100,meters=TRUE,debug=FALSE){
   if (!is(course,'raCourseList')) stop("Need object of raCourseList")
 
   offsetUnit <- attr(course$elevation,'offsetUnit')
@@ -249,72 +257,99 @@ calcAscentsDescents <- function(course,grade=.10,flatness=.03,maxGap=150,minRun=
         elObj$score2[seq(adStarts[i],adEnds[i])] <- score2
       }
 
-      # Create polygons
-      numADSegments <- length(which(elObj$adSegment==1)) - length(adStarts)
-      polyN <- 
-        data.frame(
-          x=rep(0,4 * numADSegments),
-          y=rep(0,4 * numADSegments),
-          id=rep(0L, 4 * numADSegments),
-          grade=rep(0, 4 * numADSegments),
-          score=rep(0, 4 * numADSegments),
-          score2=rep(0, 4 * numADSegments)
-        )
+      
+      # Create summary data
+      summaryDF <- function(startAt,endAt,distance,minGrade,maxGrade,meanGrade,medGrade,oaGrade,score2){
+          data.frame(
+            startAt=startAt,endAt=endAt,distance=distance,minGrade=minGrade,
+            maxGrade=maxGrade,meanGrade=meanGrade,medGrade=medGrade,oaGrade=oaGrade,
+            score2=score2, Course=elObj$Course[1]
+          )
+      }
         
+      sumM <- NULL
+      polyN <- NULL
       k <- 1L
+      l <- 1L
       for (i in 1:length(adStarts)){
         for (j in seq(adStarts[i],adEnds[i])){
           xx <- elObj[c(j,j+1),'offset']
           yy <- elObj[c(j,j+1),'alt']
-          ggrade <- elObj[j,'grade']
-          sscore <- elObj[j,'score']
-          sscore2 <- elObj[j,'score2']
-          pp <- seq(k,length.out=4)
-          polyN[pp,'x'] <- c(xx[1],xx[1],xx[2],xx[2])
-          polyN[pp,'y'] <- c(-Inf,yy[1],yy[2],-Inf)
-          polyN[pp,'id'] <- k
-          polyN[pp,'score'] <- sscore
-          polyN[pp,'score2'] <- sscore2
-          polyN[pp,'grade'] <- ggrade
-
+          polyN <- 
+            rbind(polyN,
+              polyDF(
+                x=c(xx[1],xx[1],xx[2],xx[2]),
+                y= c(-Inf,yy[1],yy[2],-Inf),
+                id=k,
+                score=elObj[j,'score'],
+                score2=elObj[j,'score2'],
+                group=1, course=kourse
+              )
+            )
           k <- k + 4
         }
-      }
-      polyN$Course <- elObj$Course[1]
+        segIds <- seq(adStarts[i],adEnds[i])
+        scRuns <- rle(elObj$score2[segIds])
+        m <- 1L
+        for (j in 1:length(scRuns$lengths)){
+          subSegIds <- seq(segIds[m],length.out=scRuns$lengths[j]+1)
+          endId <- length(subSegIds)
+          xx <- elObj[subSegIds,'offset']
+          yy <- elObj[subSegIds,'alt']
+          ggrade <- elObj[subSegIds,'grade']
+          sscore2 <- elObj[subSegIds[1],'score2']
+          sumM <- 
+            rbind(sumM,
+              summaryDF(
+                startAt=xx[1],endAt=xx[endId],distance=xx[endId]-xx[1],
+                minGrade=min(ggrade),maxGrade=max(ggrade),
+                meanGrade=mean(ggrade),medGrade=median(ggrade),
+                oaGrade=(yy[endId]-yy[1])/(xx[endId]-xx[1]),score2=sscore2
+              )
+            )
+                
+          minY <- min(yy)
+          if (sscore2==1){
+            if (minY == yy[1]){
+              xx <- c(xx, xx[length(xx)])
+              yy <- c(yy,minY)
+            } else {
+              xx <- c(xx[1], xx, xx[length(xx)])
+              yy <- c(minY,yy,minY)
+            }
+          } else {
+            if (minY == yy[length(yy)]){
+              xx <- c(xx[1],xx)
+              yy <- c(minY,yy)
+            } else {
+              xx <- c(xx[1], xx, xx[length(xx)])
+              yy <- c(minY,yy,minY)
+            }
+          }
+          polyN <- 
+            rbind(polyN,
+              polyDF(
+                x=xx,
+                y= yy,
+                id=l,
+                score=0,
+                score2=sscore2,
+                group=2,
+                course=kourse
+              )
+            )
 
-      # Create alternative polygon
-      poly2 <- subset(polyN,y<Inf&y>-Inf)
-      poly2 <- subset(poly2,!duplicated(x))
-      x <- rle(poly2$score2)
-      poly2$id <- rep(seq(1,length(x$lengths)),x$lengths)
-      polyN2 <- NULL
-      for (i in unique(poly2$id)){
-        p <- subset(poly2,id==i)
-        if (p$score2[1] == 1){
-          polyN2 <-
-            rbind(
-              polyN2,
-              p,
-              data.frame(x=p$x[nrow(p)],y=min(p$y),id=i,grade=0,score=0,score2=p$score2[1],Course=p$Course[1])
-            )
-        } else {
-          polyN2 <-
-            rbind(
-              polyN2,
-              data.frame(x=p$x[nrow(p)],y=min(p$y),id=i,grade=0,score=0,score2=p$score2[1],Course=p$Course[1]),
-              p
-            )
+          l <- l + 1
+          m <- m + scRuns$lengths[j]
         }
       }
-      poly2 <- polyN2
-
     } else {
+      sumM <- NULL
       polyN <- NULL
-      poly2 <- NULL
     }
 
     attr(elObj,'polygons') <- polyN
-    attr(elObj,'polygons2') <- poly2
+    attr(elObj,'summary') <- sumM
 
     elObj
   }
@@ -348,19 +383,19 @@ calcAscentsDescents <- function(course,grade=.10,flatness=.03,maxGap=150,minRun=
   x <- lapply( course$courseNames,scoreCourse)
   y <- attr(x[[1]],'rectangles')
   w <- attr(x[[1]],'polygons')
-  v <- attr(x[[1]],'polygons2')
+  v <- attr(x[[1]],'summary')
   z <- x[[1]]
   if (length(x) > 1){
     for (i in 2:length(x)){
       y <- rbind(y,attr(x[[i]],'rectangles'))
       w <- rbind(w,attr(x[[i]],'polygons'))
-      v <- rbind(w,attr(x[[i]],'polygons2'))
+      v <- rbind(v,attr(x[[i]],'summary'))
       z <- rbind(z,x[[i]])
     }
   }
 
   attr(z,'polygons') <- w
-  attr(z,'polygons2') <- v
+  attr(z,'summary') <- v
   attr(z,'offsetUnit') <- attr(course$elevation,'offsetUnit')
   attr(z,'flatness') <- flatness
   attr(z,'grade') <- grade
@@ -372,11 +407,13 @@ calcAscentsDescents <- function(course,grade=.10,flatness=.03,maxGap=150,minRun=
   course
 }
 
+
 courseSegment <- function(course, startAt=-Inf, endAt=Inf, meters=TRUE){
   if (isTRUE(all.equal(-Inf,startAt)) && isTRUE(all.equal(Inf,endAt)))
     return(course)
 
   offsetUnit <- attr(course$elevation,'offsetUnit')
+  oldAttr <- attributes(course$elevation)
 
   if (unitInMeters(offsetUnit) && !meters){
     startAt <- startAt / offsetUnit$toMeters
@@ -386,10 +423,37 @@ courseSegment <- function(course, startAt=-Inf, endAt=Inf, meters=TRUE){
     endAt <- endAt * offsetUnit$toFeet
   }
 
-  elevAttr <- attributes(course$elevation)
-
   course$elevation <- subset(course$elevation,offset>=startAt&offset<=endAt)
-  attr(course$elevation,'offsetUnit') <- elevAttr$offsetUnit
+  polygonSegment <- function(polyA,startAt,endAt){
+    nPoly <- NULL
+    for (i in unique(polyA$Course)){
+      cPoly <- subset(polyA,Course==i)
+      for (j in unique(cPoly$group)){
+        gPoly <- subset(cPoly,group==j)
+        xPoly <- subset(gPoly,x>=startAt&x<=endAt)
+        startPoly <- subset(gPoly,id==xPoly[1,'id'])
+        endPoly <- subset(gPoly,id==xPoly[nrow(xPoly),'id'])
+        nStartPoly <- nEndPoly <- NULL
+        if (nrow(startPoly) != nrow(subset(xPoly,id==startPoly$id[1])))
+          nStartPoly <- polyDF(x=startAt,y=min(startPoly$y),id=startPoly$id[1],score=startPoly$score[1],score2=startPoly$score2[1],group=j,course=i)
+        else
+          nStartPoly <- startPoly
+        if (nrow(endPoly) != nrow(subset(xPoly,id==endPoly$id[1])))
+          nEndPoly <- polyDF(x=endAt,y=min(endPoly$y),id=endPoly$id[1],score=endPoly$score[1],score2=endPoly$score2[1],group=j,course=i)
+        else
+          nEndPoly <- endPoly
+
+        nPoly <- rbind(nPoly, nStartPoly,xPoly, nEndPoly)
+      }
+    }
+    nPoly
+  }
+  for (i in names(oldAttr)){
+      if (!i %in% c('names','row.names','class','dim','comment','dimnames','tsp','polygons'))
+        attr(course$elevation,i) <- oldAttr[[i]]
+      else if (i=='polygons')
+        attr(course$elevation,'polygons') <- polygonSegment(oldAttr[['polygons']],startAt,endAt)
+  }
 
   course
 }

@@ -1,0 +1,87 @@
+```{r message=FALSE, echo=FALSE}
+source('../plots.R')
+source('../RunningAHEAD.R')
+load('../data/StumpJump50k_results_2002-2013.Rda')
+raLog <- readXMLTrainingLog('../data/RunningAHEAD_hornerj_log_20131023.xml')
+course <- getCourses(raLog,c("StumpJump50k"))
+course <- calcAscentsDescents(course,grade=.10,flatness=.03,maxGap=150, minRun=100)
+
+# For larger plots
+#
+opts_chunk$set(fig.width=12,message=FALSE,echo=FALSE,warning=FALSE)
+myTheme <- theme_grey()
+myTheme$plot.title$size <- 18
+myTheme$plot.title$face <- "bold"
+myTheme$text$size <- 16
+myTheme$text$face <- "bold"
+myTheme$axis.title.x$size <- 14
+myTheme$axis.title.x$vjust <- -.2
+myTheme$axis.title.y$size <- 14
+myTheme$axis.title.y$vjust <- .2
+myTheme$legend.text$size <- 14
+myTheme$legend.text$face <- "bold"
+myTheme$plot.margin <- unit(rep(1,4),'lines')
+theme_set(myTheme)
+
+# For smaller plots
+#opts_chunk$set(fig.width=6,fig.height=6,message=FALSE,echo=FALSE,warning=FALSE)
+```
+
+```{r, fig.width=14,fig.height=7}
+createElevationPlot(course)
+```
+
+```{r, fig.height=4}
+createFinishersFreqPlot(createFinishersFreqDataFrame(results)) +
+  ggtitle("Number of Finishers")
+```
+
+```{r}
+#createFinishersFreqByTimePlot(subset(results,year==2013)) +
+#  ggtitle("Finishing Times for 2013")
+createFinishersFreqByTimePlot(results) +
+  ggtitle("Finishing Times for All Years")
+```
+
+```{r}
+createFinishTimeOverYearsPlot(results) +
+  ggtitle("Finishing Times Over the Years")
+```
+
+```{r}
+createFinishTimeOverYearsPlot(subset(results,gender_place>=1&gender_place<=10),boxplot=FALSE,jitter.width=.1,jitter.alpha=.4,point.size=4) +
+  ggtitle("Top 10 Finishing Times (Men and Women)")
+```
+
+```{r}
+#createAgeOverYearsPlot(subset(results,year>2004&!is.na(age))) +
+#  ggtitle("Age of Finishers")
+createAgeOverYearsPlot(results) +
+  ggtitle("Age of Finishers")
+```
+
+```{r}
+#createAgeGroupDistPlot(createAgeGroupDistDataFrame(subset(results,year>2004&!is.na(age)))) +
+#  ggtitle("Finishers By Age Group (2005-2013)")
+createAgeGroupDistPlot(createAgeGroupDistDataFrame(results)) +
+  ggtitle("Finishers By Age Group (all years)")
+```
+```{r}
+createFinishTimeOverAgeGroupsPlot(results) +
+  ggtitle("Age Group Finishing Times (all years)")
+```
+
+```{r}
+#createFinishTimeOverAgeGroupsPlot(subset(results,year==2013&!is.na(age)),point.size=3,jitter.width=.2) +
+#  ggtitle("Age Group Finishing Times for 2013") 
+```
+
+```{r}
+#createFinishTimeOverAgeGroupsPlot(subset(results,year==2012&!is.na(age)),point.size=3,jitter.width=.2) +
+#  ggtitle("Age Group Finishing Times for 2012") 
+```
+
+```{r}
+#createFinishTimeOverAgeGroupsPlot(subset(results,year==2011&!is.na(age)),point.size=3,jitter.width=.2) +
+#  ggtitle("Age Group Finishing Times for 2011") 
+```
