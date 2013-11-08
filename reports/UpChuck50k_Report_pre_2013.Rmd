@@ -61,7 +61,6 @@ What follows is a brief report with plots and commentary similar to my
 The Upchuck 50k has been contested each year since 2008, with 2009 having the most finishers. Only 5 women finished in 2008 and 2012. Since the numbers are so low for women, I've also provided raw data in table format as they are hard to read from the plot.
 
 ```{r, results='asis'}
-library(xtable)
 finishersFreq <- createFinishersFreqDataFrame(results)
 finishersFreqLong <- reshape(finishersFreq,direction='wide',timevar='year',idvar=c('groups'))
 names(finishersFreqLong) <- sub('freq.','',names(finishersFreqLong))

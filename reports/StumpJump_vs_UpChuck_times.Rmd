@@ -1,0 +1,108 @@
+```{r message=FALSE, echo=FALSE}
+library(xtable)
+options(xtable.type='html')
+options(xtable.include.rownames=FALSE)
+options(xtable.html.table.attributes='border="1" cellspacing="0"')
+library(plyr)
+source('../run.R')
+source('../plots.R')
+source('../RunningAHEAD.R')
+load('../data/StumpJump50k_results_2002-2013.Rda')
+sjResults <- results
+load('../data/UpChuck50k_results_2008-2013.Rda')
+ucResults <- results
+colCommon <- c('lastname','firstname','time_hour')
+z <- merge(subset(ucResults,select=colCommon),subset(sjResults,select=colCommon),by=c('lastname','firstname'))
+zNames <- names(z)
+zNames[3] <- 'time.uc'
+zNames[4] <- 'time.sj'
+names(z) <- zNames
+data <- ddply(z,.(lastname,firstname),summarize, time.uc.mean=mean(time.uc),nraces.uc=length(unique(time.uc)),time.sj.mean=mean(time.sj),nraces.sj=length(unique(time.sj)))
+
+data$time.uc.recommended <- data$time.sj.mean + (4/6) # 40 minutes
+
+sj.times <- seq(4,9,by=.5)
+uc.predicted <- predict(lm(time.uc.mean ~ time.sj.mean,data),data.frame(time.sj.mean=sj.times))
+race.prediction <- data.frame(
+  StumpJumpTime=sec2str(sj.times*3600),
+  DirectorRecommendation=sec2str((sj.times+(4/6))*3600),
+  ModelRecommendation=sec2str(uc.predicted*3600)
+)
+
+
+
+# For larger plots
+#
+opts_chunk$set(fig.width=8,fig.height=8,message=FALSE,echo=FALSE,warning=FALSE)
+myTheme <- theme_grey()
+myTheme$plot.title$size <- 18
+myTheme$plot.title$face <- "bold"
+myTheme$text$size <- 16
+myTheme$text$face <- "bold"
+myTheme$axis.title.x$size <- 14
+myTheme$axis.title.x$vjust <- -.2
+myTheme$axis.title.y$size <- 14
+myTheme$axis.title.y$vjust <- .2
+myTheme$legend.text$size <- 14
+myTheme$legend.text$face <- "bold"
+myTheme$plot.margin <- unit(rep(1,4),'lines')
+theme_set(myTheme)
+
+# For smaller plots
+#opts_chunk$set(fig.width=6,fig.height=6,message=FALSE,echo=FALSE,warning=FALSE)
+```
+
+Over on 
+(Upchuck's Facebook page)[https://www.facebook.com/upchuck50k], the organizers commented that a good
+rule of thumb for average runners is to add 30-40 minutes to their
+StumpJump time.  So, using the finishing times of both races (thanks
+again to UltraSignup) I created a very simple prediction model with a
+table and plot below. I found all runners who have finished both races,
+averaged their times, and ran them through an OLS model. If you want to
+see what a real statistician can do with this data, check out Dr. Chris
+Fonnesbeck's analysis for something a little more stringent (much
+thanks to him as he's mentoring me). I am showing you the results of my
+prediction model below as it's a little less intimidating, and it bears
+very nearly the same results as Fonnesbeck's.
+
+I wish I had more time to spend on this, but I've run out and
+I wanted to get it out there before the race tomorrow. Head over to the
+Facebook page if you want to add to the discussion.
+
+# Predictions
+
+So the table below has two recommendations. I call them
+DirectorRecommendation and ModelRecommendation. I've simplified
+the Director's recommendation to add 40 minutes as it gives you the
+more conservative estimate rather than the 30-40 minute range. So for
+example, if you've run the StumpJump in a time of 4 hours, the Director
+expects you to finish in 4:40 while the Model expects you to finish in
+5:00. Interesting, a difference of 20 minutes. As you continue reading
+down the table, you'll see that for a StumpJump time of 5:30, both
+the Director and the Model agree that you will finish in about 6:10,
+no difference. Reading further if you finished StumpJump in 8:00, the
+Director expects 8:40 while the model expects 8:05.
+
+
+```{r, results='asis'}
+library(xtable)
+print(xtable(race.prediction))
+```
+
+# Plot
+
+The DirectorRecommendation is the red line, while the ModelRecommendation
+is the blue line. Start by finding your StumpJump time on the X axis
+with your computer mouse, scroll up to either one of the lines, then
+scroll to the left to get your predicted UpChuck Time.
+
+```{r}
+#stat_smooth(method='lm',formula= y ~ log(x)) +
+ggplot(data,aes(x=time.sj.mean,y=time.uc.mean)) + 
+geom_point() +
+geom_smooth(method=lm,se=FALSE) +
+geom_line(data=data,aes(x=time.sj.mean,y=time.uc.recommended),inherit.aes=FALSE,color="red") +
+scale_y_continuous(breaks=seq(4,10,by=.5),minor_breaks = seq(3.75,10.75,by=.25)) +
+scale_x_continuous(breaks=seq(4,10,by=.5),minor_breaks = seq(3.75,10.75,by=.25)) +
+xlab('Average StumpJump Results (hours)') + ylab('Average UpChuck Results (hours)')
+```

@@ -6,6 +6,8 @@ library(markdown)
 
 createReport <- function(reportFile='Report_template.Rmd'){
 
+  knitEnv <- new.env()
+
   oldwd <- setwd(dirname(reportFile))
   on.exit(setwd(oldwd))
 
@@ -14,11 +16,13 @@ createReport <- function(reportFile='Report_template.Rmd'){
   fileFrag <- strsplit(reportFile,'\\.')[[1]]
   mdFile <- paste(fileFrag[1],'md',sep='.')
   htmlFile <- paste(fileFrag[1],'html',sep='.')
-  knit(reportFile)
+  knit(reportFile,envir=knitEnv)
   markdownToHTML(
     mdFile,htmlFile,options=markdownHTMLOptions(default=TRUE),
     fragment.only=TRUE
   )
+  
+  invisible(knitEnv)
 }
 
 ## Summarizes data.
