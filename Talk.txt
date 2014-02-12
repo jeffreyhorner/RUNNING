@@ -24,6 +24,7 @@ Ultramarathons
 
     https://github.com/jeffreyhorner/RUNNING
     http://jeffreyhorner.blogspot.com/
+    http://www.irunfar.com/
 
     So this talk will focus on a project I've recently undertaken that
     combines my love of running with software technology I've learned over
@@ -136,15 +137,15 @@ XML, HTML, and XPath
 
     x
 
-    the XML package has very nice features like the ability to print out objects which produce
-    their textual representation.
+    the XML package has very nice features like the ability to print
+    out objects which produce their textual representation.
 
     getNodeSet(x,'/')
 
     Our first XPath: this first part is called the 'location path',
     and it defines where to start navigating our xml tree. The '/'
     says start at the top of the tree. Also note that getNodeSet()
-    returns an 'XMLNodeSet' object, not the same as x, which is an
+    returns an 'XMLNodeSet' list object, not the same as x, which is an
     'XMLInternalDocument'. No need to know exactly what that is, just that
     you'll want to know that what we'll now be computing on is a Node Set.
 
@@ -173,7 +174,7 @@ XML, HTML, and XPath
 
     getNodeSet(x,'//book')
 
-    This axis, the '//', will select any book node within the document,
+    This path, the '//', will select any book node within the document,
     and this will be very important when used with predicates as a way
     to create shorter Xpaths rather than specifying the entire path of
     nodes up to the root of the document.
@@ -387,16 +388,61 @@ plyr
    ddply(x,.(distance,state),.fun=summarise,count=length(state))
    x$age <- as.numeric(x$age)
    ddply(x,.(distance,gender),.fun=summarise,meanAge=mean(age,na.rm=TRUE))
-   ddply(x,.(distance,gender),.fun=summarise,meanAge=mean(age,na.rm=TRUE),minAge=min(age),maxAge=max(age))
+   ddply(x,.(distance,gender),.fun=summarise,
+     meanAge=mean(age,na.rm=TRUE),minAge=min(age),maxAge=max(age))
 
 brew
   - overview
+
+    ‘brew’ provides a templating system for text reporting. The syntax
+     is similar to PHP, Java Server Pages, Ruby's erb module, and
+     Python's psp module.
+
+    [show brew help file]
+
 markdown
-  - overview
-  - package overview
+  - overview - https://daringfireball.net/projects/markdown/
+
+    ‘Markdown’ is a plain-text formatting syntax that can be converted
+     to XHTML or other formats. Basically it renders markdown files to
+     html files for you.
+
 knitr
-  - overview
+  - overview - http://yihui.name/knitr/
+
+    The knitr package was designed to be a transparent engine for dynamic
+    report generation with R, solve some long-standing problems in Sweave,
+    and combine features in other add-on packages into one package (knitr
+    ≈ Sweave + cacheSweave + pgfSweave + weaver + animation::saveLatex
+    + R2HTML::RweaveHTML + highlight::HighlightWeaveLatex + 0.2 * brew +
+    0.1 * SweaveListingUtils + more).
+
   - customization in createReport
+
+    So in my project I've created a function that will combine both knitr
+    and markdown to ultimately create an HTML document from my knitr/markdown
+    document, and here's the basic code to do such:
+
+    fileFrag <- strsplit(reportFile,'\\.')[[1]]
+    mdFile <- paste(fileFrag[1],'md',sep='.')
+    htmlFile <- paste(fileFrag[1],'html',sep='.')
+    knit(reportFile,envir=knitEnv)
+    markdownToHTML(mdFile,htmlFile,options=mdOpts)
+
   - combining with brew and markdown in TeachingLab
+
+    https://github.com/jeffreyhorner/TeachingLab
+
+    And in another project I've combined knitr/markdown/brew
+    together in a shiny app. The pattern here is to run your knitr
+    document through brew first, and then knit, and then markdownToHTML:
+
+     brewOutput <- character()
+     brew(file,output=textConnection("brewOutput","w",local=TRUE),
+        envir=parent.frame())
+     htmlContent <- paste(try(knit2html(text=brewOutput)),forceMathJax,sep="\n")
+    
 Elevation Plots
-  - ggplot
+  - ggplot code
+
+Comments, Questions
