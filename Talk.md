@@ -1,4 +1,4 @@
-  Data Wrangling and Automating Summary Reports For Ultramarathon
+#  Data Wrangling and Automating Summary Reports For Ultramarathon
   Finishing Times
 
   The marathon is a long distance running event, officially 42.195
@@ -12,8 +12,8 @@
   and automating the creation of knitr reports.
 
 
-Ultramarathons
-  - overview
+## Ultramarathons
+  * overview
 
     An ultramarathon is any running race longer than the traditional
     marathon length of 42.195 kilometers (26.219 mi). Typical race
@@ -45,7 +45,7 @@ Ultramarathons
     notation, into R data. Using the plyr package and stitching this
     data into reports using markdown, brew, and knitr.
 
-  - StumpJump blog post
+  * StumpJump blog post
 
     So I call myself a novice ultramarathoner. I've only raced three times
     at the 50k distance, and only in one annual race, The Rock/Creek
@@ -97,7 +97,7 @@ Ultramarathons
     * Age Group Finishing Times - maybe a predictor for runners who are
     wanting to run a specific time.
 
-  - Predicting UpChuck times given StumpJump time with OLS linear regression
+  * Predicting UpChuck times given StumpJump time with OLS linear regression
 
     I won't say too much about this plot, but this is a simple linear
     prediction for the UpChuck 50k given a StumpJump 50k time. Basically
@@ -107,9 +107,9 @@ Ultramarathons
     that you should add 2 hours to your StumpJump time to predict your
     UpChuck time. Of course the data say otherwise, right?
 
-XML, HTML, and XPath
+## XML, HTML, and XPath
 
-  - XML overview - http://cran.r-project.org/web/packages/XML/index.html
+  * XML overview - http://cran.r-project.org/web/packages/XML/index.html
 
     I'm sure many of you are familiar with the EXtensible Markup Language
     (XML) that defines a set of rules for encoding documents in a
@@ -117,7 +117,7 @@ XML, HTML, and XPath
     extremely similar to XML but was invented to make pretty web pages,
     and it turns out that the R XML package is very good at parsing both.
 
-  - XPath overview - http://www.w3schools.com/xpath/
+  * XPath overview - http://www.w3schools.com/xpath/
 
     XPath is a query language for selecting nodes from an XML (or HTML)
     document. It's very extensive, can even compute values from the
@@ -194,7 +194,7 @@ XML, HTML, and XPath
     also takes a function that will operate on all nodes
     returned. Equivalent to the lapply statements above.
 
-  - Parsing HTML
+  * Parsing HTML
 
       Parsing HTML is very straightforward with the XML package, in fact
       all you have to do is call the htmlParse function rather than the
@@ -225,7 +225,7 @@ XML, HTML, and XPath
       getNodeSet(x,'//table[@class="ultra_grid"]')
       
 
-  - Using Chrome for HTML Inspection
+  * Using Chrome for HTML Inspection
 
       So how did I find out that the information I wanted from the webpage
       was the anchor nodes and the table node with the class ultra_grid?
@@ -242,7 +242,7 @@ XML, HTML, and XPath
       elements are very key to subsetting the HTML and returning exactly
       what you want.
 
-  - Caveat: Web pages change over time, so beware.
+  * Caveat: Web pages change over time, so beware.
 
       HTML pages these days are meta-data rich, they're very expressive
       and you can really drill down into parts of the page you want by
@@ -252,8 +252,8 @@ XML, HTML, and XPath
       But note that web pages can change over time and it will cause
       your XPath's to fail, so be sure to test them often.
 
-rsjon
-  - overview  - http://www.json.org/
+## rsjon
+  * overview  - http://www.json.org/
 
     JSON (JavaScript Object Notation) is a lightweight data-interchange
     format. It is easy for humans to read and write. It is easy for
@@ -265,7 +265,7 @@ rsjon
     Perl, Python, and many others. These properties make JSON an ideal
     data-interchange language.
 
-  - format
+  * format
 
     JSON in it's simplest form consists of lists and vectors. And of
     course list elements can contain further lists and elements, so this
@@ -282,7 +282,7 @@ rsjon
 
     class(x$properties$price$required)
 
-  - downloading and parsing HTML with RCurl with fromJSONDF
+  * Downloading and parsing HTML with RCurl with fromJSONDF
 
     So we can download JSON payloads directly from the web as long as
     we know the url will return a JSON object. For instance I found
@@ -309,8 +309,8 @@ rsjon
     
     runnerResults(queryRunner('Horner')[1,])
 
-plyr
-  - overview - http://plyr.had.co.nz/
+## plyr
+  * overview - http://plyr.had.co.nz/
 
     plyr is a set of tools for a common set of problems: you need to
     split up a big data structure into homogeneous pieces, apply a
@@ -334,7 +334,7 @@ plyr
     great detail about all of it's functionality, but I want to illuminate
     how I used it with pretty nice results in this project.
 
-  - ldply and ddply in queryEntrants
+  * ldply and ddply in queryEntrants
 
     Note that the first letter in a plyr function defines the input
     type to the function, and the second letter in the name defines it's
@@ -391,8 +391,8 @@ plyr
    ddply(x,.(distance,gender),.fun=summarise,
      meanAge=mean(age,na.rm=TRUE),minAge=min(age),maxAge=max(age))
 
-brew
-  - overview
+## brew
+  * overview
 
     ‘brew’ provides a templating system for text reporting. The syntax
      is similar to PHP, Java Server Pages, Ruby's erb module, and
@@ -400,15 +400,15 @@ brew
 
     [show brew help file]
 
-markdown
-  - overview - https://daringfireball.net/projects/markdown/
+## markdown
+  * overview - https://daringfireball.net/projects/markdown/
 
     ‘Markdown’ is a plain-text formatting syntax that can be converted
      to XHTML or other formats. Basically it renders markdown files to
      html files for you.
 
-knitr
-  - overview - http://yihui.name/knitr/
+## knitr
+  * overview - http://yihui.name/knitr/
 
     The knitr package was designed to be a transparent engine for dynamic
     report generation with R, solve some long-standing problems in Sweave,
@@ -417,7 +417,7 @@ knitr
     + R2HTML::RweaveHTML + highlight::HighlightWeaveLatex + 0.2 * brew +
     0.1 * SweaveListingUtils + more).
 
-  - customization in createReport
+  * customization in createReport
 
     So in my project I've created a function that will combine both knitr
     and markdown to ultimately create an HTML document from my knitr/markdown
@@ -429,7 +429,7 @@ knitr
     knit(reportFile,envir=knitEnv)
     markdownToHTML(mdFile,htmlFile,options=mdOpts)
 
-  - combining with brew and markdown in TeachingLab
+  * combining with brew and markdown in TeachingLab
 
     https://github.com/jeffreyhorner/TeachingLab
 
@@ -442,7 +442,7 @@ knitr
         envir=parent.frame())
      htmlContent <- paste(try(knit2html(text=brewOutput)),forceMathJax,sep="\n")
     
-Elevation Plots
+## Elevation Plots
   - ggplot code
 
-Comments, Questions
+## Comments, Questions
