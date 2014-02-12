@@ -1,15 +1,59 @@
+library(brew)
 library(plyr)
 library(grid)
 library(ggplot2)
 library(knitr)
 library(markdown)
 
-createReport <- function(reportFile='Report_template.Rmd'){
+createReport <- function(reportFile='Report_template.Rmd',fancybox=TRUE,template=FALSE,uploadToS3=FALSE){
+
+  mdOpts <- markdownHTMLOptions(default=TRUE)
+  mdOpts <- mdOpts[!mdOpts %in% 'base64_images']
+  if (is.logical(template) && !template)
+    mdOpts <- c(mdOpts,'fragment_only')
+
+  if (is.character(template) || (is.logical(template) && template)) {
+    if (is.character(template))
+      templateFile <- template
+    else 
+      templateFile <- getOption('RUNNING.html.template')
+
+    template <- TRUE
+  }
 
   knitEnv <- new.env()
 
+  if (fancybox){
+    old_plot <- knit_hooks$get('plot')
+    on.exit(knit_hooks$set(plot=old_plot))
+    knit_hooks$set(plot=function(x,options){
+      figFile <- paste(x,collapse='.')
+
+      # Upload to S3
+      if (uploadToS3){
+        require(RAmazonS3)
+        figFile <- sub('^/','',figFile)
+        content <- readBin(figFile,raw(),file.info(figFile)[1,'size'])
+        addFile(content,getOption('RUNNING.AmazonS3.bucket'),figFile,type="image/png")
+        urlPrefix <- getOption('RUNNING.figure.url.prefix')
+        urlPrefix <- sub('/$','',urlPrefix)
+        plotUrl <- paste(urlPrefix,figFile,sep='/')
+      } else {
+        plotUrl <- figFile
+      }
+      html <- '<a class="fancybox" rel="group" href="%s"><img src="%s" alt="%s" width="500"/></a>'
+      ret <- sprintf(html,plotUrl,plotUrl,ifelse(!is.null(options$fig.cap),options$fig.cap,""))
+      ret
+    })
+  }
+
+  # Force device to png
+  old_dev <- opts_chunk$get('dev')
+  on.exit(opts_chunk$set(dev=old_dev),add=TRUE)
+  opts_chunk$set(dev='png')
+
   oldwd <- setwd(dirname(reportFile))
-  on.exit(setwd(oldwd))
+  on.exit(setwd(oldwd),add=TRUE)
 
   reportFile <- basename(reportFile)
 
@@ -17,12 +61,24 @@ createReport <- function(reportFile='Report_template.Rmd'){
   mdFile <- paste(fileFrag[1],'md',sep='.')
   htmlFile <- paste(fileFrag[1],'html',sep='.')
   knit(reportFile,envir=knitEnv)
-  markdownToHTML(
-    mdFile,htmlFile,options=markdownHTMLOptions(default=TRUE),
-    fragment.only=TRUE
-  )
+  if (template)
+    markdownToHTML(mdFile,htmlFile,options=mdOpts,template=templateFile)
+  else
+    markdownToHTML(mdFile,htmlFile,options=mdOpts)
   
   invisible(knitEnv)
+}
+
+brewReport <- function(reportFile='Report_template.brew'){
+
+  oldwd <- setwd(dirname(reportFile))
+  on.exit(setwd(oldwd),add=TRUE)
+
+  reportFile <- basename(reportFile)
+
+  fileFrag <- strsplit(reportFile,'\\.')[[1]]
+  htmlFile <- paste(fileFrag[1],'html',sep='.')
+  brew(reportFile,htmlFile)
 }
 
 ## Summarizes data.
@@ -99,11 +155,13 @@ createFinishersFreqPlot <- function(finishers){
 }
 
 createFinishersFreqByTimePlot <- function(results){
+  rr <- range(results$time_hour)
+
   ggplot(data=results,aes(x=time_hour,fill=gender)) + 
   facet_grid(gender ~ .) + 
   guides(fill=FALSE) +
   geom_bar(stat="bin",binwidth=.5,position="dodge",colour="black") + 
-  scale_x_continuous(breaks=seq(3,12,by=1)) +
+  scale_x_continuous(breaks=seq(floor(rr[1]-1),ceiling(rr[2]+1),by=1)) +
   scale_fill_manual(values=genderColors[1:2]) +
   xlab("Time (hours)") + ylab("Number of Finishers")
 }
@@ -176,13 +234,15 @@ createFinishTimeOverYearsPlot <- function(results,boxplot=TRUE,highlight.mean=FA
   else
     hlmObject <- NULL
 
+  rr <- range(results$time_hour)
+  rr <- c(floor(rr[1]-1),ceiling(rr[2]+1))
   ggplot(data=results,aes(x=factor(year),y=time_hour,color=gender)) + 
   geom_point(position=position_jitter(width=jitter.width),alpha=jitter.alpha,size=point.size) +
   bpObject + hlmObject +
   facet_grid(gender ~ .) + 
   theme(legend.position="none") +
   scale_color_manual(values=genderColors[1:2]) +
-  scale_y_continuous(breaks=seq(4,10,by=1),minor_breaks = seq(3.5,10.5,by=1)) +
+  scale_y_continuous(breaks=seq(rr[1],rr[2],by=1),minor_breaks = seq(rr[1]+.25,rr[2]+.25,by=.25)) +
   xlab("Year") + ylab("Time (hours)")
 }
 
@@ -197,6 +257,8 @@ createFinishTimeOverAgeGroupsPlot <- function(results,boxplot=TRUE,highlight.mea
   else
     hlmObject <- NULL
 
+  rr <- range(results$time_hour)
+  rr <- c(floor(rr[1]-1),ceiling(rr[2]+1))
   results$agegroup <- factor(results$agegroup,exclude="")
   ggplot(data=results,aes(x=agegroup,y=time_hour,color=gender)) + 
   geom_point(position=position_jitter(width=jitter.width),alpha=jitter.alpha,size=point.size) +
@@ -204,7 +266,7 @@ createFinishTimeOverAgeGroupsPlot <- function(results,boxplot=TRUE,highlight.mea
   facet_grid(gender ~ .) + 
   theme(legend.position="none") +
   scale_color_manual(values=genderColors[1:2]) + 
-  scale_y_continuous(breaks=seq(4,10,by=1),minor_breaks = seq(3.5,10.5,by=1)) +
+  scale_y_continuous(breaks=seq(rr[1],rr[2],by=1),minor_breaks = seq(rr[1]+.5,rr[2]+.5,by=1)) +
   xlab("Age Groups") + ylab("Time (hours)")
 }
 
@@ -227,6 +289,8 @@ createMeanTimesByYearWithErrorBarsPlot <- function(results){
 createMeanTimesOverAgeGroupsPlot <- function(results){
   meanTimes <- summarySE(results,measurevar='time_hour',groupvars=c("agegroup","gender"))
   pd <- position_dodge(.1)
+  rr <- range(meanTimes$time_hour)
+  rr <- c(floor(rr[1]-1),ceiling(rr[2]+1))
   ggplot(meanTimes,aes(x=factor(agegroup),y=time_hour,group=gender,colour=gender)) + 
   guides(colour=guide_legend(title=NULL)) + 
   geom_errorbar(
@@ -235,7 +299,7 @@ createMeanTimesOverAgeGroupsPlot <- function(results){
   ) +
   geom_line(position=pd) + geom_point(position=pd,size=4) + 
   scale_colour_manual(values=genderColors[1:2]) + 
-  scale_y_continuous(breaks=seq(4,10,by=1),minor_breaks = seq(3.5,10.5,by=1)) +
+  scale_y_continuous(breaks=seq(rr[1],rr[2],by=1),minor_breaks = seq(rr[1]+.5,rr[2]+.5,by=1)) +
   xlab("Age Groups") + ylab("Average Time (hours)")
 }
 
@@ -291,14 +355,15 @@ createElevationPlot <- function(course,startAt=-Inf,endAt=Inf,meters=TRUE,polyGr
   # polygon data
   grade <- paste(attr(elObj,'grade')*100,'%',sep='')
   polys <- subset(attr(elObj,'polygons'),group==2)
-  polys$steepSegment <- paste(ifelse(polys$score2>=1,'>=','<='),grade)
+  polys$steepSegment <- paste(ifelse(polys$score2>=1,'Ascent >=','Descent >='),grade)
 
+  #  facet_grid(…, scales = "free_y", shape = "free")
   ggplot(data=elObj,aes(x=offset,y=alt,group=Course)) + 
   ylab("Altitude (feet)") + xlabObj + xscaleObj +
   facetObj +
   geom_line() +
-  scale_fill_manual(values=c('blue','red')) +
-  scale_colour_manual(values=c('blue','red')) +
+  scale_fill_manual(values=c('red','blue')) +
+  scale_colour_manual(values=c('red','blue')) +
   guides(colour=FALSE,fill=guide_legend(title="Grade")) +
   theme(legend.position = "top") +
   geom_polygon(data=polys,aes(x=x,y=y,color=steepSegment,fill=steepSegment,group=id),inherit.aes=FALSE,alpha=.8)

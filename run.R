@@ -65,6 +65,7 @@ secondsToString <- function(x,digits=2){
    unlist(
       lapply(x,
          function(i){
+            if (is.na(i)) return(NA)
             # fractional seconds
             fs <- as.integer(round((i - round(i))*(10^digits)))
             fmt <- ''

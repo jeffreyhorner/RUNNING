@@ -1,9 +1,9 @@
 ```{r warning=FALSE,echo=FALSE}
 source('../plots.R')
 source('../RunningAHEAD.R')
-raLog <- readXMLTrainingLog('../data/RunningAHEAD_hornerj_log_20131023.xml')
+raLog <- readXMLTrainingLog('../data/RunningAHEAD_hornerj_log_20131112.xml')
 #course <- getCourses(raLog,c("StumpJump50k", "UpChuck50k"))
-course <- getCourses(raLog,c("StumpJump50k"))
+course <- getCourses(raLog,c("UpChuck50k","StumpJump50k","Duncan Ridge Trail"),meters=FALSE)
 course <- calcAscentsDescents(course,grade=.10,flatness=.03,maxGap=150, minRun=100)
 
 # Optimal for larger plots
@@ -24,7 +24,7 @@ myTheme$plot.margin <- unit(rep(1,4),'lines')
 theme_set(myTheme)
 ```
 ```{r}
-createElevationPlot(course)
+createElevationPlot(course,meters=FALSE)
 ```
 ```{r}
 createElevationPlot(course,0,5*1600)

@@ -53,23 +53,24 @@ theme_set(myTheme)
 ```
 
 Over on 
-(Upchuck's Facebook page)[https://www.facebook.com/upchuck50k], the organizers commented that a good
+[Upchuck's Facebook page](https://www.facebook.com/upchuck50k), the organizers commented that a good
 rule of thumb for average runners is to add 30-40 minutes to their
 StumpJump time.  So, using the finishing times of both races (thanks
-again to UltraSignup) I created a very simple prediction model with a
+again to UltraSignup) I created a very 
+[simple prediction model](https://github.com/jeffreyhorner/RUNNING/blob/master/reports/StumpJump_vs_UpChuck_times.Rmd) with a
 table and plot below. I found all runners who have finished both races,
 averaged their times, and ran them through an OLS model. If you want to
-see what a real statistician can do with this data, check out Dr. Chris
-Fonnesbeck's analysis for something a little more stringent (much
+see what a real statistician can do with this data, check out 
+[Dr. Chris Fonnesbeck's analysis](http://nbviewer.ipython.org/urls/raw.github.com/fonnesbeck/ultra_race_results/master/Race%20Finishing%20Times.ipynb) for something a little more stringent (much
 thanks to him as he's mentoring me). I am showing you the results of my
 prediction model below as it's a little less intimidating, and it bears
 very nearly the same results as Fonnesbeck's.
 
 I wish I had more time to spend on this, but I've run out and
 I wanted to get it out there before the race tomorrow. Head over to the
-Facebook page if you want to add to the discussion.
+[Facebook page](https://www.facebook.com/upchuck50k) if you want to add to the discussion.
 
-# Predictions
+# Prediction Table
 
 So the table below has two recommendations. I call them
 DirectorRecommendation and ModelRecommendation. I've simplified
@@ -85,10 +86,9 @@ Director expects 8:40 while the model expects 8:05.
 
 
 ```{r, results='asis'}
-library(xtable)
 print(xtable(race.prediction))
 ```
-
+<br>
 # Plot
 
 The DirectorRecommendation is the red line, while the ModelRecommendation
