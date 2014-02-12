@@ -1,5 +1,4 @@
-#  Data Wrangling and Automating Summary Reports For Ultramarathon
-  Finishing Times
+#  Data Wrangling and Automating Summary Reports For Ultramarathon Finishing Times
 
   The marathon is a long distance running event, officially 42.195
   kilometers (or 26.2 miles) in length. However ultramarathons are
