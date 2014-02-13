@@ -98,6 +98,9 @@ getRoute <- function(link=''){
   zz <- as.data.frame(t(z),stringsAsFactors = FALSE)
   names(zz) <- colNames
 
+  zz$latitude <- as.numeric(zz$latitude)
+  zz$longitude <- as.numeric(zz$longitude)
+
   zz
 }
 
