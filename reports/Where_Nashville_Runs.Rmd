@@ -1,0 +1,28 @@
+```{r message=FALSE, echo=FALSE}
+# For larger plots
+#
+opts_chunk$set(fig.width=10,fig.height=10,message=FALSE,echo=FALSE,warning=FALSE)
+myTheme <- theme_grey()
+myTheme$plot.title$size <- 18
+myTheme$plot.title$face <- "bold"
+myTheme$text$size <- 16
+myTheme$text$face <- "bold"
+myTheme$axis.title.x$size <- 14
+myTheme$axis.title.x$vjust <- -.2
+myTheme$axis.title.y$size <- 14
+myTheme$axis.title.y$vjust <- .2
+myTheme$legend.text$size <- 14
+myTheme$legend.text$face <- "bold"
+myTheme$plot.margin <- unit(rep(1,4),'lines')
+myTheme$plot.background$fill <- 'white'
+theme_set(myTheme)
+
+# For smaller plots
+#opts_chunk$set(fig.width=6,fig.height=6,message=FALSE,echo=FALSE,warning=FALSE)
+#
+load('../data/WhereNashvilleRuns.RData')
+```
+
+```{r where-nashville-runs}
+createRouteMap(loc='Nashville, TN',subset(df,name %in% sample(routes$name,500)))
+```

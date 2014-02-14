@@ -379,3 +379,15 @@ createGradeDistPlot <- function(course){
   facetObj +
   geom_bar(stat="bin",binwidth=.03,position="dodge",colour="black")
 }
+
+createRouteMap <- function(loc='Nashville, TN',routes){
+  require(ggmap)
+  p <- qmap('Nashville, TN',zoom=12,source='stamen',maptype='toner-lite')
+  for (i in unique(routes$name)){
+    dat <- subset(routes,name==i)
+    dat$lat <- jitter(dat$lat,amount=.0001)
+    dat$lon <- jitter(dat$lon,amount=.0001)
+    p <- p + geom_path(aes(x=lon,y=lat),data=dat,color="#0000FF",alpha=.2)
+  }
+  p
+}
