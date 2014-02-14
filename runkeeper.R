@@ -34,7 +34,7 @@ findRoutes <- function(loc="Nashville, TN",sleep=1,maxRoutes=NA){
 
   foundMaxRoutes <- function(){
     if (!is.na(maxRoutes)){
-      maxRoutes <<- maxRoutes - length(links)
+      maxRoutes <<- maxRoutes - length(link_nodes)
       return(ifelse(maxRoutes <= 0,TRUE,FALSE))
     } else {
       return(FALSE)
@@ -63,45 +63,38 @@ findRoutes <- function(loc="Nashville, TN",sleep=1,maxRoutes=NA){
     next_link <- paste(runRoot,next_rel_link,sep='')
     x = htmlParse(getURL(next_link),asText=TRUE)
     link_nodes <- getNodeSet(x,'//div[@class="resultListItem clearfix"]',fun=xmlAttrs)
-    if (length(link_nodes) == 0) return()
+    if (length(link_nodes) == 0) return(build_answer())
     links <- c(links,unlist(lapply(link_nodes,function(i) i['link'])))
     titles <- c(titles,unlist(getNodeSet(x,'//div[@class="resultListItem clearfix"]/div/h4[@class="resultTitle"]',fun=xmlValue)))
     if (foundMaxRoutes()) return(build_answer())
     next_link_node <- getNodeSet(x,'//a[@class="nextLink"]',fun=xmlAttrs)
-    if (length(next_link_node) == 0) return()
+    if (length(next_link_node) == 0) return(build_answer())
     next_rel_link <- next_link_node[[1]]['href']
   } 
+
+  build_answer()
 }
 
 getRoute <- function(link=''){
-  if (is.data.frame(link)){
-    # TODO: vectorize
-    link <- link$link[1]
+  if (!is.data.frame(link)){
+    link <- data.frame(name='Unknown',link=link)
   }
 
-  x <- htmlParse(getURL(link),asText=TRUE)
-  x <- getNodeSet(x,'//div[@class="mainColumnPadding"]/script',fun=xmlValue)[[1]]
-  x <- strsplit(x,split="\n")[[1]][2]
-  x <- sub('^\\s*var\\s+routePoints\\s+=\\s+','',x)
-  x <- sub(';$','',x)
+  route <- function(piece,...){
+    x <- htmlParse(getURL(piece$link),asText=TRUE)
+    x <- getNodeSet(x,'//div[@class="mainColumnPadding"]/script',fun=xmlValue)[[1]]
+    payload <- try(strsplit(x,split="\n")[[1]][2])
+    if (inherits(payload,'try-error'))
+      return(data.frame(lat=x,lon=NULL,stringsAsFactors=FALSE))
+    x <- sub('^\\s*var\\s+routePoints\\s+=\\s+','',payload)
+    x <- sub(';$','',x)
 
-  # Treat all NULL values as empty strings. This will allow us to use unlist 
-  # which unfortunately would drops NULL values.
-  y <- lapply(fromJSON(x),function(i) lapply(i,function(o) if (is.null(o)) "" else o) )
+    # Treat all NULL values as empty strings. This will allow us to use unlist 
+    # which unfortunately would drops NULL values.
+    ldply(fromJSON(x),function(i)data.frame(lat=i$latitude,lon=i$longitude,stringsAsFactors=FALSE) )
+  }
 
-  if (length(y) <= 0) return(data.frame())
-
-  colNames <- names(y[[1]])
-  numRows <- length(y)
-  z <- unlist(y)
-  dim(z) <- c(length(colNames),numRows)
-  zz <- as.data.frame(t(z),stringsAsFactors = FALSE)
-  names(zz) <- colNames
-
-  zz$latitude <- as.numeric(zz$latitude)
-  zz$longitude <- as.numeric(zz$longitude)
-
-  zz
+  ddply( link, .(name),.fun=route)
 }
 
 
