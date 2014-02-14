@@ -382,7 +382,10 @@ createGradeDistPlot <- function(course){
 
 createRouteMap <- function(loc='Nashville, TN',routes){
   require(ggmap)
-  p <- qmap('Nashville, TN',zoom=12,source='stamen',maptype='toner-lite')
+  b <- geocode(loc,'all')$result[[1]]$geometry$viewport
+  bbox <- c(b$southwest$lng,b$southwest$lat,b$northeast$lng,b$northeast$lat)
+
+  p <- qmap(bbox,zoom=12,source='stamen',maptype='toner-lite')
   for (i in unique(routes$name)){
     dat <- subset(routes,name==i)
     dat$lat <- jitter(dat$lat,amount=.0001)
