@@ -1,0 +1,64 @@
+```{r message=FALSE, echo=FALSE}
+# For larger plots
+#
+opts_chunk$set(fig.width=10,fig.height=10,message=FALSE,echo=FALSE,warning=FALSE)
+myTheme <- theme_grey()
+myTheme$plot.title$size <- 18
+myTheme$plot.title$face <- "bold"
+myTheme$text$size <- 16
+myTheme$text$face <- "bold"
+myTheme$axis.title.x$size <- 14
+myTheme$axis.title.x$vjust <- -.2
+myTheme$axis.title.y$size <- 14
+myTheme$axis.title.y$vjust <- .2
+myTheme$legend.text$size <- 14
+myTheme$legend.text$face <- "bold"
+myTheme$plot.margin <- unit(rep(1,4),'lines')
+myTheme$plot.background$fill <- 'white'
+theme_set(myTheme)
+
+# For smaller plots
+#opts_chunk$set(fig.width=6,fig.height=6,message=FALSE,echo=FALSE,warning=FALSE)
+#
+load('../data/WhereTennesseeRuns.RData')
+locations <- c('Nashville, TN','Chattanooga, TN','Knoxville, TN','Memphis, TN')
+expandBox <- function(b) c(b$lng-.2,b$lat-.15,b$lng+.2,b$lat+.15)
+```
+# Where Nashville Runs
+
+Over on Flowing Data, Nathan Yau mapped out [Where people
+run](http://flowingdata.com/2014/02/05/where-people-run/) in major
+cities across the US. I thought I'd do the same with the four major
+cities in Tennessee. I used RunKeeper's route search tool to find routes
+in Nashville, Chattanooga, Knoxville, and Memphis and then graphed them
+altogether on tile maps from CloudMade. See anything interesting.
+
+As Yau pointed out in his post, most people like to run near water or
+in state parks. I think this is true here in Tennessee as well, but also
+note that many run where they work or live or go to school.
+
+```{r where-nashville-runs, fig.width=10}
+createRouteMap(loc=locations[1],routes=subset(df,location==locations[1]))
+```
+
+## Nashville (larger map)
+```{r where-nashville-runs-large, fig.width=20,fig.height=20}
+b <- expandBox(geocode(locations[1],'all')$result[[1]]$geometry$location)
+createRouteMap(loc=b,routes=subset(df,location==locations[1]))
+```
+
+## Chattanooga
+```{r where-chattanoga-runs-large, fig.width=20, fig.height=20}
+b <- expandBox(geocode(locations[2],'all')$result[[1]]$geometry$location)
+createRouteMap(loc=b,routes=subset(df,location==locations[2]))
+```
+## Knoxville
+```{r where-knoxville-runs-large, fig.width=20, fig.height=20}
+b <- expandBox(geocode(locations[3],'all')$result[[1]]$geometry$location)
+createRouteMap(loc=b,routes=subset(df,location==locations[3]))
+```
+## Memphis
+```{r where-memphis-runs-large, fig.width=20, fig.height=20}
+b <- expandBox(geocode(locations[4],'all')$result[[1]]$geometry$location)
+createRouteMap(loc=b,routes=subset(df,location==locations[4]))
+```
