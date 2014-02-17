@@ -8,10 +8,11 @@ library(plyr)
 
 snooze <- function(sleepSec) if (sleepSec>0) Sys.sleep(sleepSec)
 
-findRoutes <- function(loc="Nashville, TN",sleep=1,maxRoutes=NA){
+findRoutes <- function(location="Nashville, TN",sleep=1,maxRoutes=NA){
   runRoot <- 'http://runkeeper.com'
   runURL <- 'http://runkeeper.com/search/routes'
 
+  adply(location,.margins=1,.fun=function(loc){
   latlong <- gGeoCode(loc)
   search_form <-
     list(
@@ -43,6 +44,7 @@ findRoutes <- function(loc="Nashville, TN",sleep=1,maxRoutes=NA){
 
   build_answer <- function(){
     data.frame(
+      location=loc,
       name=titles,
       link=paste(runRoot,links,sep=''),
       stringsAsFactors=FALSE
@@ -73,11 +75,12 @@ findRoutes <- function(loc="Nashville, TN",sleep=1,maxRoutes=NA){
   } 
 
   build_answer()
+  })
 }
 
 getRoute <- function(link=''){
   if (!is.data.frame(link)){
-    link <- data.frame(name='Unknown',link=link)
+    link <- data.frame(location='Unknown',name='Unknown',link=link)
   }
 
   route <- function(piece,...){
@@ -94,7 +97,7 @@ getRoute <- function(link=''){
     ldply(fromJSON(x),function(i)data.frame(lat=i$latitude,lon=i$longitude,stringsAsFactors=FALSE) )
   }
 
-  ddply( link, .(name),.fun=route)
+  ddply( link, .(location,name),.fun=route)
 }
 
 

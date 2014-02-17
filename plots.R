@@ -380,17 +380,13 @@ createGradeDistPlot <- function(course){
   geom_bar(stat="bin",binwidth=.03,position="dodge",colour="black")
 }
 
-createRouteMap <- function(loc='Nashville, TN',routes){
+createRouteMap <- function(loc='Nashville, TN',z=12,routes=NULL){
   require(ggmap)
-  b <- geocode(loc,'all')$result[[1]]$geometry$viewport
-  bbox <- c(b$southwest$lng,b$southwest$lat,b$northeast$lng,b$northeast$lat)
 
-  p <- qmap(bbox,zoom=12,source='stamen',maptype='toner-lite')
-  for (i in unique(routes$name)){
-    dat <- subset(routes,name==i)
-    dat$lat <- jitter(dat$lat,amount=.0001)
-    dat$lon <- jitter(dat$lon,amount=.0001)
-    p <- p + geom_path(aes(x=lon,y=lat),data=dat,color="#0000FF",alpha=.2)
-  }
-  p
+  #routes$lat <- jitter(routes$lat,amount=.0001)
+  #routes$lon <- jitter(routes$lon,amount=.0001)
+
+  #qmap(location=loc,zoom=12,source='stamen',maptype='toner-lite') +
+  qmap(location=loc,zoom=13,source='cloudmade',maptype=122072,api_key='3233045b4dd844dbaf94270875701268') +
+    geom_path(aes(x=lon,y=lat,group=name),data=routes,color="#660066",alpha=.3,size=.8)
 }

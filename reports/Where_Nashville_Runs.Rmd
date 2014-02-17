@@ -1,7 +1,7 @@
 ```{r message=FALSE, echo=FALSE}
 # For larger plots
 #
-opts_chunk$set(fig.width=20,fig.height=20,message=FALSE,echo=FALSE,warning=FALSE)
+opts_chunk$set(fig.width=10,fig.height=10,message=FALSE,echo=FALSE,warning=FALSE)
 myTheme <- theme_grey()
 myTheme$plot.title$size <- 18
 myTheme$plot.title$face <- "bold"
@@ -23,6 +23,23 @@ theme_set(myTheme)
 load('../data/WhereNashvilleRuns.RData')
 ```
 
-```{r where-nashville-runs}
-createRouteMap(loc='Nashville, TN',subset(df,name %in% sample(routes$name,100)))
+```{r where-nashville-runs, fig.width=10}
+#createRouteMap(loc='Nashville, TN',z=12,routes=subset(df,name %in% sample(routes$name,100)))
+createRouteMap(loc='Nashville, TN',z=12,routes=df)
+```
+
+```{r where-nashville-runs-large, fig.width=20, fig.height=17}
+b <- geocode('Nashville, TN','all')$result[[1]]$geometry$viewport
+bbox <- c(b$southwest$lng,b$southwest$lat,b$northeast$lng,b$northeast$lat)
+bwidth <- abs(bbox[1] - bbox[3])
+bwdelta <- (bwidth - bwidth*.70)/2
+bbox[1] <- bbox[1] + bwdelta
+bbox[3] <- bbox[3] - bwdelta
+bheight <- abs(bbox[4]-bbox[2])
+bhdelta <- (bheight - bheight*.70)/2
+bbox[4] <- bbox[4] - bhdelta*1.8
+bbox[2] <- bbox[2] + bhdelta*.80
+
+#createRouteMap(loc=bbox,z=14,routes=subset(df,name %in% sample(routes$name,100)))
+createRouteMap(loc=bbox,z=14,routes=df)
 ```
