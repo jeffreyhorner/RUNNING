@@ -383,10 +383,12 @@ createGradeDistPlot <- function(course){
 createRouteMap <- function(loc='Nashville, TN',z=12,routes=NULL){
   require(ggmap)
 
+  #api_key <- getOption('RUNNING.cloudmade.api_key')
+
   #routes$lat <- jitter(routes$lat,amount=.0001)
   #routes$lon <- jitter(routes$lon,amount=.0001)
 
-  #qmap(location=loc,zoom=12,source='stamen',maptype='toner-lite') +
-  qmap(location=loc,zoom=13,source='cloudmade',maptype=122072,api_key='3233045b4dd844dbaf94270875701268') +
+  # qmap(location=loc,zoom=13,source='cloudmade',maptype=122072,api_key=api_key) +
+  qmap(location=loc,zoom=12,source='stamen',maptype='toner') +
     geom_path(aes(x=lon,y=lat,group=name),data=routes,color="#660066",alpha=.3,size=.8)
 }
