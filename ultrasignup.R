@@ -1,4 +1,5 @@
 source('run.R')
+library(ggmap)
 library(rjson)
 library(XML)
 library(utils)
@@ -38,6 +39,19 @@ fromJSONDF <- function(jsonURL){
 
 queryEvent <- function(q=''){
   ultraURL <- sprintf('http://ultrasignup.com/service/events.svc/GetFeaturedEventsSearch/p=0/q=%s',URLencode(q,reserve=TRUE))
+  fromJSONDF(ultraURL)
+}
+
+queryEventByLoc <- function(q=NULL,lat=NULL,lon=NULL){
+  if (is.null(q)){
+    g <- list(lat=lat,lon=lon)
+  } else {
+    g <- geocode(q)
+  }
+  lat <- URLencode(format(g$lat))
+  lng <- URLencode(format(g$lon))
+  
+  ultraURL <- sprintf('http://ultrasignup.com/service/events.svc/closestevents?lat=%s&lng=%s&mi=300&mo=12',lat,lng)
   fromJSONDF(ultraURL)
 }
 
@@ -267,10 +281,16 @@ eventResults <- function(eid=NA,sleep=1){
 
   if (xmlValue(getNodeSet(x,'//title')[[1]])=='Object moved'){
     ultraURL <- paste('http://ultrasignup.com',xmlAttrs(getNodeSet(x,'//a')[[1]]),sep='')
+    # Event Id unknown
+    if (rootURL == ultraURL) return(data.frame())
     x <- htmlParse(getURL(ultraURL,.opts=ultraOpts()),asText=TRUE); snooze(sleep)
   }
   # getNodeSet(x,'//table[@id="ContentPlaceHolder1_Results11_dlResultYears"]//a')
   timeId <- ldply(getNodeSet(x,'//table[@id="ContentPlaceHolder1_Results11_dlResultYears"]//a'),function(i) data.frame(url=xmlAttrs(i)[["href"]],year=xmlValue(i)))
+
+  if (nrow(timeId) == 0) return(data.frame())
+
+  eventName <- getNodeSet(x,'//h1[@class="event-title"]',fun=xmlValue)[[1]]
 
   # Take the first record from the timeId and find all distances contested
   x <- htmlParse(paste(rootURL,as.character(timeId$url[1]),sep=''),isURL=TRUE); snooze(sleep)
@@ -296,15 +316,16 @@ eventResults <- function(eid=NA,sleep=1){
       function(i) {
         data.frame(
           id=sub('GetResults\\((\\d+),\\d+\\)','\\1',xmlAttrs(i)[["onclick"]]),
-          year=xmlValue(i)
+          year=xmlValue(i),
+          stringsAsFactors=FALSE
         )
       }
     )
   # Now get results for what we've got so far
   results <- 
     queryResultsFromUltraSignup(
-      year=as.integer(levels(distanceIds[[currentDist]]$year)),
-      eventId=as.integer(levels(distanceIds[[currentDist]]$id)),
+      year=distanceIds[[currentDist]]$year,
+      eventId=distanceIds[[currentDist]]$id,
       distance=currentDist,
       sleep=sleep
     )
@@ -321,7 +342,8 @@ eventResults <- function(eid=NA,sleep=1){
         function(i) {
           data.frame(
             id=sub('GetResults\\((\\d+),\\d+\\)','\\1',xmlAttrs(i)[["onclick"]]),
-            year=xmlValue(i)
+            year=xmlValue(i),
+            stringsAsFactors=FALSE
           )
         }
       )
@@ -329,14 +351,16 @@ eventResults <- function(eid=NA,sleep=1){
       rbind(
         results,
         queryResultsFromUltraSignup(
-          year=as.integer(levels(distanceIds[[currentDist]]$year)),
-          eventId=as.integer(levels(distanceIds[[currentDist]]$id)),
+          year=distanceIds[[currentDist]]$year,
+          eventId=distanceIds[[currentDist]]$id,
           distance=currentDist,
           sleep=sleep
         )
       )
   }
 
+  results$eventname <- eventName
+  results$eid <- eid
   results
 }
 # queryResultsFromUltraSignup:
@@ -363,6 +387,9 @@ queryResultsFromUltraSignup <-
   results <- list()
 
   # Data collection
+
+  if (is.character(year)) year <- as.integer(year)
+  if (is.character(eventId)) eventId <- as.integer(eventId)
 
   for (i in 1:length(year)){
 
@@ -391,6 +418,7 @@ queryResultsFromUltraSignup <-
     zz <- as.data.frame(t(z),stringsAsFactors = FALSE)
     names(zz) <- colNames
     zz$year <- year[i]
+    zz$event_distance_id <- eventId[i]
 
     results[[i]] <- zz
   }
@@ -426,13 +454,19 @@ queryResultsFromUltraSignup <-
   for (i in seq(20,75,by=5)){
     if(i == 20){
       label <- "<20"
-      res[which(res$age < 20),'agegroup'] <- label
+      idx <- which(res$age < 20)
+      if (length(idx) > 0)
+        res[idx,'agegroup'] <- label
     } else if (i == 75){
       label <- ">=75"
-      res[which(res$age >= 75),'agegroup'] <- label
+      idx <- which(res$age >= 75)
+      if (length(idx) > 0)
+        res[idx,'agegroup'] <- label
     } else {
       label <- paste(i,'-',i+4,sep='')
-      res[which(res$age >= i & res$age <=i+4),'agegroup'] <- label
+      idx <- which(res$age >= i & res$age <=i+4)
+      if (length(idx) > 0)
+        res[idx,'agegroup'] <- label
     }
   }
 
