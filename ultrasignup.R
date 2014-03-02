@@ -15,12 +15,16 @@ ultraCookies <- function(){
   cookieFile
 }
 
-ultraOpts <- function() curlOptions(cookiejar=ultraCookies())
+ultraOpts <- function() {
+  extra <- getOption('RUNNING.curloptions')
+  if (is.null(extra))
+    extra <- list()
+  extra$cookiejar <- ultraCookies()
+  curlOptions(.opts=extra)
+}
 
 fromJSONDF <- function(jsonURL){
-  con <- url(jsonURL)
-  x <- fromJSON(file=con)
-  close(con)
+  x <- fromJSON(getURL(jsonURL,.opts=ultraOpts()))
   # Treat all NULL values as empty strings. This will allow us to use unlist 
   # which unfortunately would drops NULL values.
   y <- lapply(x,function(i) lapply(i,function(o) if (is.null(o)) "" else o) )
@@ -46,13 +50,15 @@ queryEventByLoc <- function(q=NULL,lat=NULL,lon=NULL){
   if (is.null(q)){
     g <- list(lat=lat,lon=lon)
   } else {
-    g <- geocode(q)
+    g <- geocode(q,messaging=FALSE)
   }
   lat <- URLencode(format(g$lat))
   lng <- URLencode(format(g$lon))
   
   ultraURL <- sprintf('http://ultrasignup.com/service/events.svc/closestevents?lat=%s&lng=%s&mi=300&mo=12',lat,lng)
-  fromJSONDF(ultraURL)
+  x <- fromJSONDF(ultraURL)
+  x <- x[,names(x)[!names(x) %in% c('EventImages','ScaleColor')]]
+  unique(x)
 }
 
 queryRunner<- function(q=''){
@@ -394,9 +400,8 @@ queryResultsFromUltraSignup <-
   for (i in 1:length(year)){
 
     snooze(sleep)
-    con <- url(sprintf(urlTmpl,eventId[i]))
-    x <- fromJSON(file=con)
-    close(con)
+    ultraURL <- sprintf(urlTmpl,eventId[i])
+    x <- fromJSON(getURL(ultraURL,.opts=ultraOpts()))
 
     if (length(x)==0){
       results[[i]] <- data.frame()
