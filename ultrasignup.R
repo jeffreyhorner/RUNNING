@@ -46,16 +46,19 @@ queryEvent <- function(q=''){
   fromJSONDF(ultraURL)
 }
 
-queryEventByLoc <- function(q=NULL,lat=NULL,lon=NULL){
-  if (is.null(q)){
-    g <- list(lat=lat,lon=lon)
+queryEventByLoc <- function(q=NULL,lat=NULL,lon=NULL,mi=300,mo=12){
+  if (is.null(q) && is.null(lat)){
+    ultraURL <- 'http://ultrasignup.com/service/events.svc/closestevents'
   } else {
-    g <- geocode(q,messaging=FALSE)
+    if (is.null(q)){
+      g <- list(lat=lat,lon=lon)
+    } else {
+      g <- geocode(q,messaging=FALSE)
+    }
+    lat <- URLencode(format(g$lat))
+    lng <- URLencode(format(g$lon))
+    ultraURL <- sprintf('http://ultrasignup.com/service/events.svc/closestevents?lat=%s&lng=%s&mi=%d&mo=%d',lat,lng,mi,mo)
   }
-  lat <- URLencode(format(g$lat))
-  lng <- URLencode(format(g$lon))
-  
-  ultraURL <- sprintf('http://ultrasignup.com/service/events.svc/closestevents?lat=%s&lng=%s&mi=300&mo=12',lat,lng)
   x <- fromJSONDF(ultraURL)
   x <- x[,names(x)[!names(x) %in% c('EventImages','ScaleColor')]]
   unique(x)
