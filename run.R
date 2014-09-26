@@ -1,28 +1,55 @@
-mileSplits <- function(splits=c(),target='',distance=13.1){
-    targetN <- str2sec(target)
-    avgPace <- targetN/distance
+library(plyr)
+# assumes pace and distance in miles
+timeSplits <- function(splitType=c('distance','time'),splitsEvery=c(),splitsAt=c(),target='',distance=13.1,pace='',splitNames=NULL){
+  if (nzchar(target) && nzchar(pace) || !nzchar(target) && !nzchar(pace))
+    stop('Choose either target or pace')
+
+  
+  if (nzchar(target)){
+    Target <- str2sec(target)
+    Pace <- Target/distance
+  } else {
+    Pace <- str2sec(pace)
+    Target <- Pace * distance
+  }
+  
+  # splits in distance
+  if (length(splitsEvery) || length(splitsAt)){
+
+    if (length(splitsEvery))
+      splitsAt <- seq(splitsEvery,distance,by=splitsEvery)
+
+    Distances <- c(splitsAt[1],diff(splitsAt))
+
+    remainderDist <- distance - sum(Distances)
+    if (remainderDist < 0)
+      stop('splitsAt distance too long')
+    Distances[length(Distances)+1] <- remainderDist
+    CummDist <- 0
+    CummTime <- 0
+    cumFun <- function(i){
+      CummDist <<- CummDist + i
+      Split <- Pace * i
+      CummTime <<- CummTime + Split
+      data.frame(Distance=i,CummDist=CummDist, Time=sec2str(Split), CummTime=sec2str(CummTime), Pace=sec2str(Pace))
+    }
+    x <- adply(Distances,1,.fun=cumFun)
+    x$X1 <- NULL
+  } else {
     numMiles <- floor(distance)
     remainderDist <- distance - numMiles
-    remainderSec <- targetN - (avgPace*numMiles)
+    remainderSec <- Target - (Pace*numMiles)
+    Distances <- c(rep(1,numMiles),remainderDist)
 
-    EvenSplits <- sec2str(c(rep(avgPace,numMiles),remainderSec))
+    EvenSplits <- sec2str(c(rep(Pace,numMiles),remainderSec))
     EvenCum <- sec2str(cumsum(str2sec(EvenSplits)))
-    if (length(splits)){
-	splitsN <- str2sec(splits)
-	numMilesToGo <- numMiles - length(splits)
-	newTarget <- targetN - sum(splitsN)
-	newDistance <- distance - length(splits)
-	newAvgPace <- newTarget/newDistance
-	newRemainderSec <- newTarget - (newAvgPace*numMilesToGo)
+    Distances <- c(rep(1,numMiles),remainderDist)
+    x <- data.frame(Distance=Distances,CummDist=cumsum(Distances),Time=EvenSplits,CummTime=EvenCum,Pace=sec2str(rep(Pace,length(Distances))))
+  }
+  if (!missing(splitNames))
+    x$Names <- c(splitNames,rep('',nrow(x)-length(splitNames)))
 
-	CalcSplits <- sec2str(c(splitsN,rep(newAvgPace,numMilesToGo),newRemainderSec))
-	CalcCum <- sec2str(cumsum(str2sec(CalcSplits)))
-	data.frame(EvenSplits=EvenSplits,EvenCum=EvenCum,CalcSplits=CalcSplits,
-	       CalcCum=CalcCum)
-    } else {
-	data.frame(EvenSplits=EvenSplits,EvenCum=EvenCum)
-    }
-
+  x
 }
 
 # Make a class called Duration, a subclass of numeric, whose value is elapsed
@@ -56,6 +83,7 @@ toSeconds <- function(x){
 }
 str2sec <- toSeconds
 
+options(sec2str.fractional.seconds=FALSE)
 secondsToString <- function(x,digits=2){
 
    if (!is.numeric(x) && !is(x,'Duration'))
@@ -77,10 +105,10 @@ secondsToString <- function(x,digits=2){
                fmt <- '%OS'
 
             i <- format(as.POSIXct(strptime("0:0:0","%H:%M:%S")) + i, format=fmt)
-            if (fs > 0)
-               sub('[0]+$','',paste(i,fs,sep='.'))
-            else
-               i
+            if (fs > 0 && getOption('sec2str.fractional.seconds'))
+               i <- sub('[0]+$','',paste(i,fs,sep='.'))
+            
+            sub('^0+','',i)
          }
       )
    )
