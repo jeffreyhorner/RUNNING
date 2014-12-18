@@ -200,61 +200,39 @@ runnerResults <- function(lname='',fname=''){
   }
   lnames <- lname
   fnames <- fname
+  trim <- function(x){
+    gsub('^\\s+|\\s+$|\\xc2+|\\xa0+','',x,perl=TRUE)
+  }
+
   ret <- data.frame()
   for (i in 1:length(lnames)){
     lname <- lnames[i]
     fname <- fnames[i]
-    ultraURL <- sprintf('http://ultrasignup.com/results_participant.aspx?fname=%s&lname=%s',URLencode(fname),URLencode(lname))
-    x <- htmlParse(getURL(ultraURL,.opts=ultraOpts()),asText=TRUE)
-    x <- getNodeSet(x,'//table[@id="presults"]/*')
+    ultraURL <- sprintf('http://ultrasignup.com/service/events.svc/history/%s/%s/',URLencode(fname),URLencode(lname))
+    x <- fromJSON(getURL(ultraURL,.opts=ultraOpts()))
 
-    trim <- function(x){
-      gsub('^\\s+|\\s+$|\\xc2+|\\xa0+','',x,perl=TRUE)
-    }
-    genderage <- function(x){
-      strsplit(sub('.*([FM])(\\d\\d?).*$','\\1 \\2',x),' ')[[1]]
-    }
-    ga <- NULL
     for (j in 1:length(x)){
-      if (is.null(xmlAttrs(x[[j]]))) next
-      if (xmlAttrs(x[[j]])[1]=='groupheader'){
-        ga <- genderage(xmlValue(x[[j]]))
-        gender <- ifelse(ga[1]=='M','Men','Women')
-        known_age <- as.integer(ga[2])
-      } else if (xmlAttrs(x[[j]])[1] %in% c('altrow rows','row  rows')){
-
-        dat <- xmlToList(x[[j]])
-        dat <- dat[names(dat)=='td']
-
-        ranking <- as.numeric(sub('%','',trim(dat[[1]]$text)))
-        place <- as.integer(trim(dat[[2]]$text))
-        gender_place <- as.integer(trim(dat[[3]]$text))
-        age <- as.integer(trim(dat[[4]]$text))
-        formattime <- trim(dat[[5]]$text)
-        time  <- as.integer(str2sec(formattime))
-        time_hour  <- time / 3600
-        eventdate <- strptime(trim(dat[[6]]$text),format="%B %d, %Y")
+      gender <- x[[j]]$Gender
+      for (k in 1:length(x[[j]]$Results)){
+        res <- x[[j]]$Results[[k]]
+        runner_rank <- as.numeric(sub('%','',res$runner_rank))
+        place <- as.integer(res$place)
+        gender_place <- as.integer(res$gender_place)
+        age <- as.integer(res$age)
+        formattime <- res$formattime
+        time <- as.integer(str2sec(formattime))
+        time_hour <- time / 3600
+        eventdate <- strptime(res$eventdate,format='%m/%d/%Y')
         year <- as.integer(format(eventdate,'%Y'))
-        state <- trim(dat[[7]]$text)
-
-        if (is.null(dat[[8]]$a)){
-          race <- strsplit(dat[[8]]$span$text,'-')[[1]]
-          distance_spec <- trim(race[length(race)]) # can have two or three elements, last is distance
-          race <- trim(race[1])
-          did <- NA
-        } else {
-          race <- strsplit(dat[[8]]$a$text,'-')[[1]]
-          distance_spec <- trim(race[length(race)]) # can have two or three elements, last is distance
-          race <- trim(race[1])
-          did <- as.integer(strsplit(dat[[8]]$a$.attrs,'=')[[1]][2])
-        }
+        race <- strsplit(res$eventname,'-')[[1]]
+        distance_spec <- trim(race[length(race)]) # can have two or three elem
+        race <- trim(race[1])
 
         ret <- rbind( ret, data.frame(
               lastname=lname,
               firstname=fname,
               gender=gender,
-              known_age=known_age,
-              ranking=ranking,
+              runner_rank=runner_rank,
               place=place,
               gender_place=gender_place,
               age=age,
@@ -263,10 +241,10 @@ runnerResults <- function(lname='',fname=''){
               time_hour=time_hour,
               eventdate=eventdate,
               year=year,
-              state=state,
+              eventlocation=res$eventlocation,
               race=race,
               distance_spec=distance_spec,
-              did=did,
+              status=res$status,
               stringsAsFactors=FALSE
             )
           )
